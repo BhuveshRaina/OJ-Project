@@ -1,6 +1,6 @@
 # Problem Statement
 
-**Given two integers, return their sum.**
+**Given two integers, print their sum.**
 
 ---
 

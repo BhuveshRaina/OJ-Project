@@ -1,7 +1,6 @@
 # Problem Statement
 
-**Given an array of integers, find the maximum subarray sum.**  
-The subarray must be contiguous, and you need to return the largest possible sum from any subarray.
+**Given an array of integers, find the contiguous subarray with the maximum sum and print the sum.**
 
 ---
 

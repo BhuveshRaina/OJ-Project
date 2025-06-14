@@ -1,20 +1,18 @@
-# Problem Structure
+# Problem Name
+2 Sum
 
-## Problem Name  
-Two Sum
+## Input Format
+int a, int b
 
-## Function Name  
-addTwoNumbers
+## Input Fields
+- int a
+- int b
 
-## Input Structure  
-Two integers
+## Output Format
+Printed integer result
 
-### Input Fields  
-- `int a`  
-- `int b`
+## Output Fields
+- int result
 
-## Output Structure  
-Single integer result
-
-### Output Fields  
-- `int result`
+## Constraints
+-10^9 <= a, b <= 10^9
