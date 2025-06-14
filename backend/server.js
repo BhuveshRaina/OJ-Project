@@ -8,10 +8,14 @@ const boilerplateRoutes = require('./routes/boilerplateRoutes');
 
 const app = express();
 
-app.use(cors());
+
+app.use(cors({
+  origin: 'http://localhost:8000', 
+  credentials: true               
+}));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-// Routes
+
 app.use('/boilerplate', boilerplateRoutes);
 
 app.get('/', (req, res) => {
