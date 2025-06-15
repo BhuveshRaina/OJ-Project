@@ -1,13 +1,13 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Joi = require('joi');
-const User = require('../models/User');
+const User = require('../models/users');
 
 const registerSchema = Joi.object({
   name: Joi.string().required(),
   email: Joi.string().email().required(),
   password: Joi.string()
-    .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$'))
+    .pattern(new RegExp('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/'))
     .required()
     .messages({
       'string.pattern.base':
@@ -25,8 +25,9 @@ const generateToken = (user) => {
 };
 
 exports.register = async (req, res) => {
-  const { error } = registerSchema.validate(req.body);
-  if (error) return res.status(400).json({ message: error.details[0].message, success: false });
+  console.log('Register request body:', req.body);
+  // const { error } = registerSchema.validate(req.body);
+  // if (error) return res.status(400).json({ message: error.details[0].message, success: false });
 
   const { name, email, password } = req.body;
 
