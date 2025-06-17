@@ -22,7 +22,8 @@ app.use(cookieParser());
 app.use('/boilerplate', boilerplateRoutes);
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/auth/google', require('./routes/googleRoutes'));
-
+app.use('/api/addProblem', require('./routes/addProblem'));
+app.use('/api/submissions', require('./routes/submissionRoutes'));
 
 app.get('/', (req, res) => {
   res.send('Online Judge Backend is running');
