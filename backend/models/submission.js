@@ -25,7 +25,8 @@ const SubmissionSchema = new mongoose.Schema({
   totalMemoryKb: { type: Number },
   startedAt: { type: Date },
   endedAt: { type: Date },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+  expireAt: { type: Date, default: () => new Date(Date.now() + 10 * 60 * 1000) }, 
 })
 
 module.exports = mongoose.model("Submission", SubmissionSchema)
