@@ -1,5 +1,6 @@
 const Submission = require('../models/submission');
 const { getTestCasesFromS3 } = require('../utils/s3Fetcher');
+const submissionQueue = require('../config/redisConfig');
 
 exports.createSubmission = async (req, res) => {
   try {
@@ -11,7 +12,7 @@ exports.createSubmission = async (req, res) => {
         message: 'Missing required fields: problemId, code, language, or problemName'
       });
     }
-    
+
     const submission = new Submission({
       userId: req.user.id,
       problemId,
@@ -24,9 +25,17 @@ exports.createSubmission = async (req, res) => {
     await submission.save();
 
     const testCases = await getTestCasesFromS3(problemName);
-    console.log('Test cases fetched:', testCases);
 
-    // sendToDockerForExecution(submission, testCases);
+    await submissionQueue.add({
+      submissionId: submission._id,
+      code,
+      language,
+      testcases: testCases,
+      limits: { time: 2000, memory: 256 }
+    }, {
+      attempts: 2,
+      backoff: 3000
+    });
 
     res.status(201).json({
       message: 'Submission received and sent for execution',
