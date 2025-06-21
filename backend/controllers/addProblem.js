@@ -4,6 +4,10 @@ const slugify = require('slugify');
 
 const addProblem = async (req, res) => {
   try {
+    if (!req.user || req.user.role !== 'problemSetter') {
+      return res.status(403).json({ error: 'Only problem setters can upload problems.' });
+    }
+
     const files = req.files;
 
     if (!files.problem || !files.structure || !files.testcases) {
