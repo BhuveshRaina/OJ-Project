@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 const Header = () => {
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-gray-700 bg-dark-bg/95 backdrop-blur supports-[backdrop-filter]:bg-dark-bg/80 shadow-sm">
+    <header className="w-full border-b border-gray-700 bg-dark-bg/95 backdrop-blur supports-[backdrop-filter]:bg-dark-bg/80 shadow-sm">
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center space-x-2 group">
