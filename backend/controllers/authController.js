@@ -26,8 +26,6 @@ const generateToken = (user) => {
 
 exports.register = async (req, res) => {
   console.log('Register request body:', req.body);
-  // const { error } = registerSchema.validate(req.body);
-  // if (error) return res.status(400).json({ message: error.details[0].message, success: false });
 
   const { name, email, password } = req.body;
 
@@ -44,10 +42,10 @@ exports.register = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'Lax',
-      maxAge: 24 * 60 * 60 * 1000
+      maxAge: 24 * 60 * 60 * 1000,  
     });
-
-    return res.status(201).json({ message: 'User registered and logged in', success: true });
+    const userToSend = await User.findById(newUser._id).select('-password');
+    return res.status(201).json({ message: 'User registered and logged in', success: true , user: userToSend });
   } catch (err) {
     return res.status(500).json({ message: 'Server error', success: false });
   }
@@ -70,18 +68,23 @@ exports.login = async (req, res) => {
     res.cookie('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Strict',
-      maxAge: 24 * 60 * 60 * 1000
+      sameSite: 'Lax',
+      maxAge: 24 * 60 * 60 * 1000,   
     });
-
-    return res.json({ message: 'Logged in successfully', success: true });
+    const userToSend = await User.findById(user._id).select('-password');
+    return res.json({ message: 'Logged in successfully', success: true , user : userToSend });
   } catch (err) {
     return res.status(500).json({ message: 'Server error', success: false });
   }
 };
 
 exports.logout = async (req, res) => {
-  res.clearCookie('token');
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'Lax',
+    path: '/'     
+  });
   return res.json({ message: 'Logged out successfully', success: true });
 };
 

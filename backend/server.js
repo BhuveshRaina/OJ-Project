@@ -11,7 +11,7 @@ const app = express();
 
 
 app.use(cors({
-  origin: 'http://localhost:8000', 
+  origin: 'http://localhost:5173', 
   credentials: true               
 }));
 app.use(bodyParser.json());
@@ -21,7 +21,7 @@ app.use(cookieParser());
 
 app.use('/boilerplate', boilerplateRoutes);
 app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/auth/google', require('./routes/googleRoutes'));
+app.use('/auth/google', require('./routes/googleRoutes'));
 app.use('/api/addProblem', require('./routes/addProblem'));
 app.use('/api/submissions', require('./routes/submissionRoutes'));
 

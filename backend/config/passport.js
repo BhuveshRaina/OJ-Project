@@ -17,6 +17,7 @@ passport.use(new GoogleStrategy({
       user = new User({
         name: profile.displayName,
         email,
+        role: 'user', 
         password: dummyPassword 
       });
       await user.save();
