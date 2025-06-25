@@ -352,7 +352,6 @@ const Contests = () => {
 
   return (
     <div className="min-h-screen bg-dark-bg">
-      <Header />
 
       {/* Top Section */}
       <div className="bg-gradient-to-b from-gray-800 to-dark-bg">

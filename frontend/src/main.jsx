@@ -1,29 +1,43 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import './index.css';
-import Index from './index';
-import SignIn from './components/SignIn';
-import SignUp from './components/SignUp';
-import Problem from './components/Problem';
-import Dashboard from './pages/dashboard';
-import Contest from './pages/contest';
-import ProblemEditor from './pages/ProblemEditor';
-import ProblemSetter from './pages/ProblemSetter'
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(
-  <React.StrictMode>
+import { getProfile }  from '@/store/authSlice';
+
+import MainLayout      from '@/layouts/MainLayout';
+import ProtectedRoute  from '@/components/ProtectedRoute';
+import Index           from '@/pages/Index';
+import SignIn          from '@/pages/SignIn';
+import SignUp          from '@/pages/SignUp';
+import Problem         from '@/pages/Problem';
+import ProblemEditor   from '@/pages/ProblemEditor';
+import ProblemSetter   from '@/pages/ProblemSetter';
+import Dashboard       from '@/pages/Dashboard';
+import Contest         from '@/pages/Contest';
+
+export default function App() {
+  const dispatch = useDispatch();
+  const { status } = useSelector((state) => state.auth);
+
+  useEffect(() => {
+    dispatch(getProfile());
+  }, [dispatch]);
+
+  if (status === 'loading') return null;
+
+  return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/signin" element={<SignIn />} />
-        <Route path="/signup" element={<SignUp />} />
-        <Route path="/problems" element={<Problem/>} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path='/contest' element={<Contest/>}></Route>
-        <Route path="/problems/:id" element={< ProblemEditor/>} />
-        <Route path='/createProblems' element={<ProblemSetter/>}></Route>
+        <Route element={<MainLayout />}>
+          <Route path='/'            element={<ProtectedRoute><Index /></ProtectedRoute>} />
+          <Route path="/signin"      element={<ProtectedRoute><SignIn /></ProtectedRoute>} />
+          <Route path="/signup"      element={<ProtectedRoute><SignUp /></ProtectedRoute>} />
+          <Route path="/problems"    element={<ProtectedRoute><Problem /></ProtectedRoute>} />
+          <Route path="/dashboard"   element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/contests"    element={<ProtectedRoute><Contest /></ProtectedRoute>} />
+          <Route path="/problems/:id" element={<ProtectedRoute><ProblemEditor /></ProtectedRoute>} />
+          <Route path="/createProblems" element={<ProtectedRoute><ProblemSetter /></ProtectedRoute>} />
+        </Route>
       </Routes>
     </BrowserRouter>
-  </React.StrictMode>
-);
+  );
+}

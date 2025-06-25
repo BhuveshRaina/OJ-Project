@@ -106,8 +106,6 @@ const Problems = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-dark-bg">
-      <Header />
-
       {/* Hero */}
       <section className="px-4 py-12 bg-gradient-to-br from-dark-bg via-dark-card/30 to-dark-bg">
         <div className="container text-center mb-8">
@@ -275,7 +273,7 @@ const Problems = () => {
         </div>
       </section>
 
-      <Footer />
+   
     </div>
   );
 };

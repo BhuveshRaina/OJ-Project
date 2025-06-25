@@ -1,36 +1,42 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Eye, EyeOff, Code, Github, ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate, Link } from 'react-router-dom';
+import { loginUser } from '@/store/authSlice';
+import { googleLogin } from '@/store/authSlice';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Eye, EyeOff, Code, Github, ArrowLeft } from 'lucide-react';
+import { FcGoogle } from 'react-icons/fc';
 
 const SignIn = () => {
+  const dispatch  = useDispatch();
+  const navigate  = useNavigate();
+  const { status, error, isAuthenticated } = useSelector((s) => s.auth);
+
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    email: "",
-    password: ""
-  });
+  const [formData, setFormData]         = useState({ email: '', password: '' });
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+
+  /* redirect once authenticated */
+  useEffect(() => {
+    if (isAuthenticated) navigate('/dashboard');
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Sign in data:", formData);
+    setHasSubmitted(true);
+    dispatch(loginUser(formData));
   };
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
       <div className="flex-1 flex items-center justify-center px-4 py-8 bg-gradient-to-br from-dark-bg via-dark-card/50 to-dark-bg relative overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 bg-code-pattern opacity-10"></div>
-        
-        {/* Floating Elements */}
-        <div className="absolute top-20 left-20 w-32 h-32 bg-gradient-to-r from-code-purple/30 to-code-blue/30 rounded-full blur-xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-20 w-40 h-40 bg-gradient-to-r from-code-blue/30 to-code-purple/30 rounded-full blur-xl animate-pulse delay-1000"></div>
+        <div className="absolute inset-0 bg-code-pattern opacity-10" />
+        <div className="absolute top-20 left-20 w-32 h-32 bg-gradient-to-r from-code-purple/30 to-code-blue/30 rounded-full blur-xl animate-pulse" />
+        <div className="absolute bottom-20 right-20 w-40 h-40 bg-gradient-to-r from-code-blue/30 to-code-purple/30 rounded-full blur-xl animate-pulse delay-1000" />
 
         <div className="w-full max-w-md relative z-10">
           <div className="text-center mb-8 animate-fade-in">
@@ -51,6 +57,7 @@ const SignIn = () => {
                 Enter your credentials to access your account
               </CardDescription>
             </CardHeader>
+
             <CardContent className="space-y-4">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
@@ -65,12 +72,13 @@ const SignIn = () => {
                     required
                   />
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="password" className="text-white">Password</Label>
                   <div className="relative">
                     <Input
                       id="password"
-                      type={showPassword ? "text" : "password"}
+                      type={showPassword ? 'text' : 'password'}
                       placeholder="Enter your password"
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -89,17 +97,16 @@ const SignIn = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <Link to="/forgot-password" className="text-sm text-code-blue hover:text-code-purple transition-colors">
-                    Forgot password?
-                  </Link>
-                </div>
+                {hasSubmitted && error && (
+                  <p className="text-red-500 text-sm">{error}</p>
+                )}
 
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
+                  disabled={status === 'loading'}
                   className="w-full h-11 bg-gradient-to-r from-code-purple to-code-blue hover:from-code-blue hover:to-code-purple transition-all duration-300 text-white font-medium shadow-lg"
                 >
-                  Sign In
+                  {status === 'loading' ? 'Signing in…' : 'Sign In'}
                 </Button>
               </form>
 
@@ -112,9 +119,13 @@ const SignIn = () => {
                 </div>
               </div>
 
-              <Button variant="outline" className="w-full h-11 border-2 border-gray-600 bg-dark-bg/50 text-white hover:bg-gray-700 transition-colors">
-                <Github className="h-4 w-4 mr-2" />
-                Continue with GitHub
+               <Button
+                onClick={() => dispatch(googleLogin())}
+                variant="outline"
+                className="w-full h-11 border-2 border-gray-600 bg-dark-bg/50 text-white hover:bg-gray-700 transition-colors"
+              >
+                <FcGoogle className="h-5 w-5 mr-2" />
+                Continue with Google
               </Button>
 
               <div className="text-center text-sm">
@@ -134,7 +145,6 @@ const SignIn = () => {
           </div>
         </div>
       </div>
-      <Footer />
     </div>
   );
 };

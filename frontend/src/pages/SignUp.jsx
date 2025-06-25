@@ -1,43 +1,68 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, EyeOff, Code, Github, ArrowLeft, User } from "lucide-react";
-import { Link } from "react-router-dom";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate, Link } from 'react-router-dom';
+import { registerUser } from '@/store/authSlice';
+import { googleLogin } from '@/store/authSlice';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Eye, EyeOff, Code, ArrowLeft, User } from 'lucide-react';
+import { FcGoogle } from 'react-icons/fc';
 
 const SignUp = () => {
-  const [showPassword, setShowPassword] = useState(false);
+  const dispatch = useDispatch();
+  const navigate  = useNavigate();
+  const { status, error, isAuthenticated } = useSelector((s) => s.auth);
+
+  const [showPassword,        setShowPassword]        = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [hasSubmitted,        setHasSubmitted]        = useState(false);
+  const [localError,          setLocalError]          = useState('');
+
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    agreeToTerms: false
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
   });
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      console.log(isAuthenticated);
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Sign up data:", formData);
+    setHasSubmitted(true);
+
+    if (formData.password !== formData.confirmPassword) {
+      setLocalError('Passwords do not match.');
+      return;
+    }
+
+    setLocalError('');
+    const { confirmPassword, ...payload } = formData; // drop confirmPassword
+    dispatch(registerUser(payload));
   };
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
       <div className="flex-1 flex items-center justify-center px-4 py-8 bg-gradient-to-br from-dark-bg via-dark-card/50 to-dark-bg relative overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 bg-code-pattern opacity-10"></div>
-        
-        {/* Floating Elements */}
-        <div className="absolute top-10 right-10 w-32 h-32 bg-gradient-to-r from-code-purple/30 to-code-blue/30 rounded-full blur-xl animate-pulse"></div>
-        <div className="absolute bottom-10 left-10 w-40 h-40 bg-gradient-to-r from-code-orange/30 to-code-green/30 rounded-full blur-xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-gradient-to-r from-code-green/20 to-code-blue/20 rounded-full blur-xl animate-pulse delay-500"></div>
+        <div className="absolute inset-0 bg-code-pattern opacity-10" />
+
+        {/* Decorative blobs */}
+        <div className="absolute top-10 right-10 w-32 h-32 bg-gradient-to-r from-code-purple/30 to-code-blue/30 rounded-full blur-xl animate-pulse" />
+        <div className="absolute bottom-10 left-10 w-40 h-40 bg-gradient-to-r from-code-orange/30 to-code-green/30 rounded-full blur-xl animate-pulse delay-1000" />
+        <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-gradient-to-r from-code-green/20 to-code-blue/20 rounded-full blur-xl animate-pulse delay-500" />
 
         <div className="w-full max-w-md relative z-10">
           <div className="text-center mb-8 animate-fade-in">
@@ -58,35 +83,24 @@ const SignUp = () => {
                 Fill in your details to get started
               </CardDescription>
             </CardHeader>
+
             <CardContent className="space-y-4">
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName" className="text-white">First Name</Label>
-                    <Input
-                      id="firstName"
-                      type="text"
-                      placeholder="John"
-                      value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      className="h-11 border-2 border-gray-600 bg-dark-bg/50 text-white placeholder:text-gray-400 focus:border-code-blue transition-colors"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName" className="text-white">Last Name</Label>
-                    <Input
-                      id="lastName"
-                      type="text"
-                      placeholder="Doe"
-                      value={formData.lastName}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                      className="h-11 border-2 border-gray-600 bg-dark-bg/50 text-white placeholder:text-gray-400 focus:border-code-blue transition-colors"
-                      required
-                    />
-                  </div>
+                {/* Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-white">Name</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="John Doe"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="h-11 border-2 border-gray-600 bg-dark-bg/50 text-white placeholder:text-gray-400 focus:border-code-blue transition-colors"
+                    required
+                  />
                 </div>
 
+                {/* Email */}
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-white">Email</Label>
                   <Input
@@ -100,12 +114,13 @@ const SignUp = () => {
                   />
                 </div>
 
+                {/* Password */}
                 <div className="space-y-2">
                   <Label htmlFor="password" className="text-white">Password</Label>
                   <div className="relative">
                     <Input
                       id="password"
-                      type={showPassword ? "text" : "password"}
+                      type={showPassword ? 'text' : 'password'}
                       placeholder="Create a strong password"
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -124,12 +139,13 @@ const SignUp = () => {
                   </div>
                 </div>
 
+                {/* Confirm Password */}
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword" className="text-white">Confirm Password</Label>
                   <div className="relative">
                     <Input
                       id="confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
+                      type={showConfirmPassword ? 'text' : 'password'}
                       placeholder="Confirm your password"
                       value={formData.confirmPassword}
                       onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
@@ -148,35 +164,27 @@ const SignUp = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="terms"
-                    checked={formData.agreeToTerms}
-                    onCheckedChange={(checked) => setFormData({ ...formData, agreeToTerms: checked })}
-                    className="border-gray-600 data-[state=checked]:bg-code-blue data-[state=checked]:border-code-blue"
-                  />
-                  <Label htmlFor="terms" className="text-sm text-gray-300">
-                    I agree to the{" "}
-                    <Link to="/terms" className="text-code-blue hover:text-code-purple transition-colors">
-                      Terms of Service
-                    </Link>{" "}
-                    and{" "}
-                    <Link to="/privacy" className="text-code-blue hover:text-code-purple transition-colors">
-                      Privacy Policy
-                    </Link>
-                  </Label>
-                </div>
+                {(hasSubmitted && (localError || error)) && (
+                  <p className="text-red-500 text-sm">
+                    {localError || error}
+                  </p>
+                )}
 
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
+                  disabled={status === 'loading'}
                   className="w-full h-11 bg-gradient-to-r from-code-purple to-code-blue hover:from-code-blue hover:to-code-purple transition-all duration-300 text-white font-medium"
-                  disabled={!formData.agreeToTerms}
                 >
-                  <User className="h-4 w-4 mr-2" />
-                  Create Account
+                  {status === 'loading' ? 'Creating…' : (
+                    <>
+                      <User className="h-4 w-4 mr-2" />
+                      Create Account
+                    </>
+                  )}
                 </Button>
               </form>
 
+              {/* separator */}
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <Separator className="w-full bg-gray-600" />
@@ -186,9 +194,14 @@ const SignUp = () => {
                 </div>
               </div>
 
-              <Button variant="outline" className="w-full h-11 border-2 border-gray-600 bg-dark-bg/50 text-white hover:bg-gray-700 transition-colors">
-                <Github className="h-4 w-4 mr-2" />
-                Continue with GitHub
+              {/* Google button placeholder */}
+              <Button
+                variant="outline"
+                className="w-full h-11 border-2 border-gray-600 bg-dark-bg/50 text-white hover:bg-gray-700 transition-colors"
+                onClick={() => dispatch(googleLogin())}
+              >
+                <FcGoogle className="h-5 w-5 mr-2" />
+                Continue with Google
               </Button>
 
               <div className="text-center text-sm">
@@ -208,7 +221,6 @@ const SignUp = () => {
           </div>
         </div>
       </div>
-      <Footer />
     </div>
   );
 };

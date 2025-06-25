@@ -13,7 +13,6 @@ const Dashboard = () => {
 
   return (
     <>
-    <Header/>
     <div className="min-h-screen bg-dark-bg">
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -46,7 +45,6 @@ const Dashboard = () => {
         onClose={() => setSelectedSubmission(null)}
       />
     </div>
-    <Footer/>
     </>
     
   );
