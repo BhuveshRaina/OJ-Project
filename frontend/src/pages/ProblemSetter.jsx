@@ -29,7 +29,6 @@ const ProblemSetter = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-dark-bg">
-      <Header />
 
       {/* Hero Section */}
       <section className="px-4 py-12 bg-gradient-to-br from-dark-bg via-dark-card/30 to-dark-bg">
@@ -83,8 +82,6 @@ const ProblemSetter = () => {
           </Tabs>
         </div>
       </section>
-
-      <Footer />
     </div>
   );
 };

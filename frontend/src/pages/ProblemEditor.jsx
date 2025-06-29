@@ -158,7 +158,6 @@ const ProblemEditor = () => {
   ─────────────────────────────────────────── */
   return (
     <div className="min-h-screen bg-dark-bg text-white flex flex-col">
-      <Header />
 
       {/* MAIN LAYOUT */}
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -378,8 +377,6 @@ const ProblemEditor = () => {
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
-
-      <Footer />
     </div>
   );
 };

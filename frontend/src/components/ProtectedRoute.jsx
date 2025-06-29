@@ -1,23 +1,29 @@
 import { useSelector } from 'react-redux';
 import { Navigate, useLocation } from 'react-router-dom';
 
-export default function ProtectedRoute({ children }){
-  const { isAuthenticated, user, status } = useSelector((state) => state.auth);
-  const { pathname: path } = useLocation();
-
+export default function ProtectedRoute({ children }) {
+  const { isAuthenticated, user, status } = useSelector(s => s.auth);
+  const { pathname } = useLocation();
+  console.log(pathname)
   if (status === 'loading') return null;
 
   if (!isAuthenticated) {
-    const openForGuests = ['/', '/signin', '/signup'];
-    return openForGuests.includes(path) ? children : <Navigate to="/signin" replace />;
+    const open = ['/', '/signin', '/signup'];
+    return open.includes(pathname)
+      ? children
+      : <Navigate to="/signin" replace />;
   }
 
-  if (path === '/signin' || path === '/signup' || path === '/') return <Navigate to="/dashboard" replace />;
-
-  if (path === '/createProblem') {
-    const isProblemSetter = user?.role === 'problemSetter';
-    return isProblemSetter ? children : <Navigate to="/dashboard " replace />;
+  if (['/', '/signin', '/signup'].includes(pathname)) {
+    return <Navigate to="/dashboard" replace />;
   }
+
+  if (pathname === '/createProblems') {
+    return user?.role === 'problemSetter'
+      ? children
+      : <Navigate to="/dashboard" replace />;
+  }
+
 
   return children;
 }

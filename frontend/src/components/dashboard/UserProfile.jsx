@@ -3,7 +3,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Calendar, Trophy } from 'lucide-react';
+import { useDispatch,useSelector } from 'react-redux';
+function monthName(monthNumber) {
+  const monthNames = [
+    'January', 'February', 'March',     'April',
+    'May',     'June',     'July',      'August',
+    'September','October', 'November',  'December'
+  ];
 
+  if (monthNumber < 1 || monthNumber > 12) return null;
+  return monthNames[monthNumber - 1];
+}
 const UserProfile = () => {
   const userData = {
     name: 'Alex Johnson',
@@ -15,46 +25,48 @@ const UserProfile = () => {
     globalRank: '#1,247',
     contestRating: 1856,
   };
-
+  const { user } = useSelector((state) => state.auth);
+  console.log(user);
+  const [year,month] = user?.createdAt.toString().split('T')[0].split('-');
+  const joinDate = `${monthName(parseInt(month))} ${year}`;
   return (
     <Card className="bg-dark-card border-gray-700">
       <CardHeader className="text-center">
         <Avatar className="w-20 h-20 mx-auto mb-4">
           <AvatarImage src={userData.avatar} alt={userData.name} />
           <AvatarFallback className="bg-code-blue text-white text-lg">
-            {userData.name
+            {user.name
               .split(' ')
-              .map((n) => n[0])
+              .map((n) => n[0].toUpperCase())
               .join('')}
           </AvatarFallback>
         </Avatar>
         <CardTitle className="text-xl font-bold text-white">
-          {userData.name}
+          {user.name}
         </CardTitle>
-        <p className="text-code-blue font-medium">@{userData.username}</p>
+        <p className="text-code-blue font-medium">{user.email}</p>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between">
           <Badge className="bg-code-purple/20 text-code-purple border-code-purple">
-            {userData.rank}
+            {user.codingTitle}
           </Badge>
           <span className="text-sm font-medium text-gray-300">
-            {userData.globalRank}
+            {user.globalRank === 0 ? '' : user.globalRank}
           </span>
         </div>
 
-        <div className="space-y-3">
-          <div className="flex items-center text-sm text-gray-300">
-            <MapPin className="w-4 h-4 mr-2" />
-            {userData.location}
-          </div>
+        <div className="space-y-3"> 
           <div className="flex items-center text-sm text-gray-300">
             <Calendar className="w-4 h-4 mr-2" />
-            Joined {userData.joinDate}
+            Joined {joinDate}
           </div>
+         
           <div className="flex items-center text-sm text-gray-300">
             <Trophy className="w-4 h-4 mr-2" />
-            Contest Rating: {userData.contestRating}
+            {user.contestRating === -1000 ? 'No Contest yet' : 
+            <p>Contest Rating: {user.contestRating}</p>
+            }
           </div>
         </div>
       </CardContent>

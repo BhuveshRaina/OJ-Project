@@ -22,7 +22,7 @@ export default function App() {
     dispatch(getProfile());
   }, [dispatch]);
 
-  if (status === 'loading') return null;
+   if (status === 'loading' || status === 'idle') return null;
 
   return (
     <BrowserRouter>
@@ -35,7 +35,7 @@ export default function App() {
           <Route path="/dashboard"   element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/contests"    element={<ProtectedRoute><Contest /></ProtectedRoute>} />
           <Route path="/problems/:id" element={<ProtectedRoute><ProblemEditor /></ProtectedRoute>} />
-          <Route path="/createProblems" element={<ProtectedRoute><ProblemSetter /></ProtectedRoute>} />
+          <Route path="/createProblem" element={<ProtectedRoute><ProblemSetter /></ProtectedRoute>} />
         </Route>
       </Routes>
     </BrowserRouter>

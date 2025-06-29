@@ -1,6 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import axios from "axios";
+
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -33,84 +40,57 @@ import {
   ChevronDown,
   FileText,
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
-const ProblemsList = ({ onEditProblem }) => {
+const BASE = "http://localhost:8000/api/problems";
+
+export default function ProblemsList({ onEditProblem }) {
+  const { toast } = useToast();
+
+  /* ---------------- state ---------------- */
   const [searchTerm, setSearchTerm] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("All Levels");
   const [currentPage, setCurrentPage] = useState(1);
+  const [problems, setProblems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const itemsPerPage = 5;
-
-  // Mock problems data
-  const problems = [
-    {
-      id: 1,
-      title: "Two Sum",
-      difficulty: "Easy",
-      tags: ["array", "hash-table"],
-      created: "26/10/2023",
-      status: "Published",
-    },
-    {
-      id: 2,
-      title: "Longest Substring Without Repeating Characters",
-      difficulty: "Medium",
-      tags: ["string", "sliding-window", "hash-table"],
-      created: "25/10/2023",
-      status: "Draft",
-    },
-    {
-      id: 3,
-      title: "Median of Two Sorted Arrays",
-      difficulty: "Hard",
-      tags: ["array", "binary-search", "divide-and-conquer"],
-      created: "24/10/2023",
-      status: "Under Review",
-    },
-    {
-      id: 4,
-      title: "Validate Binary Search Tree",
-      difficulty: "Medium",
-      tags: ["tree", "depth-first-search", "recursion"],
-      created: "23/10/2023",
-      status: "Published",
-    },
-    {
-      id: 5,
-      title: "Implement Queue using Stacks",
-      difficulty: "Easy",
-      tags: ["stack", "queue", "data-structures"],
-      created: "22/10/2023",
-      status: "Published",
-    },
-    {
-      id: 6,
-      title: "Binary Tree Level Order Traversal",
-      difficulty: "Medium",
-      tags: ["tree", "breadth-first-search"],
-      created: "21/10/2023",
-      status: "Published",
-    },
-    {
-      id: 7,
-      title: "Reverse Linked List",
-      difficulty: "Easy",
-      tags: ["linked-list", "recursion"],
-      created: "20/10/2023",
-      status: "Draft",
-    },
-    {
-      id: 8,
-      title: "Maximum Subarray",
-      difficulty: "Medium",
-      tags: ["array", "dynamic-programming"],
-      created: "19/10/2023",
-      status: "Published",
-    },
-  ];
-
   const difficulties = ["All Levels", "Easy", "Medium", "Hard"];
 
-  /* ---------- Filters ---------- */
+  /* ---------------- fetch ---------------- */
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await axios.get(`${BASE}/my`, {
+          withCredentials: true,
+        });
+        if (!cancelled) setProblems(data.problems || []);
+      } catch (err) {
+        console.error("Could not load problems:", err);
+        toast({
+          title: "Error",
+          description: "Failed to fetch problems.",
+          variant: "destructive",
+        });
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [toast]);
+
+  /* ---------------- helpers ---------------- */
+  const difficultyColor = (d) =>
+    ({
+      Easy: "bg-green-500/20 text-green-400 border-green-500/30",
+      Medium: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+      Hard: "bg-red-500/20 text-red-400 border-red-500/30",
+    }[d] || "bg-gray-500/20 text-gray-400 border-gray-500/30");
+
+  /* ---------------- filtering & pagination ---------------- */
   const filteredProblems = problems.filter((p) => {
     const matchesSearch = p.title
       .toLowerCase()
@@ -120,45 +100,44 @@ const ProblemsList = ({ onEditProblem }) => {
     return matchesSearch && matchesDiff;
   });
 
-  /* ---------- Pagination ---------- */
-  const totalPages = Math.ceil(filteredProblems.length / itemsPerPage);
-  const validCurrentPage = Math.min(currentPage, Math.max(1, totalPages));
-  const startIndex = (validCurrentPage - 1) * itemsPerPage;
+  const totalPages = Math.ceil(filteredProblems.length / itemsPerPage) || 1;
+  const validCurrentPage = Math.min(currentPage, totalPages);
   const paginatedProblems = filteredProblems.slice(
-    startIndex,
-    startIndex + itemsPerPage,
+    (validCurrentPage - 1) * itemsPerPage,
+    validCurrentPage * itemsPerPage
   );
 
-  /* ---------- Handlers ---------- */
+  /* ---------------- actions ---------------- */
+  const handleDeleteProblem = async (problem) => {
+    const confirm = window.confirm(
+      `Delete "${problem.title}"? This action cannot be undone.`
+    );
+    if (!confirm) return;
+
+    try {
+      await axios.delete(`${BASE}/deleteProblem/${problem._id}`, {
+        withCredentials: true,
+      });
+
+      setProblems((prev) => prev.filter((p) => p._id !== problem._id));
+      toast({ title: "Deleted", description: "Problem removed." });
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Error",
+        description: err.response?.data?.error || "Deletion failed.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditProblem = (problem) => onEditProblem?.(problem);
+
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
 
-  const handleEditProblem = (problem) => {
-    if (onEditProblem) onEditProblem(problem);
-  };
-
-  const handleDeleteProblem = (problem) => {
-    console.log("Deleting problem:", problem);
-    // deletion logic here
-  };
-
-  /* ---------- Helpers ---------- */
-  const difficultyColor = (d) =>
-    ({
-      Easy: "bg-green-500/20 text-green-400 border-green-500/30",
-      Medium: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-      Hard: "bg-red-500/20 text-red-400 border-red-500/30",
-    }[d] || "bg-gray-500/20 text-gray-400 border-gray-500/30");
-
-  const statusColor = (s) =>
-    ({
-      Published: "bg-green-500/20 text-green-400 border-green-500/30",
-      Draft: "bg-gray-500/20 text-gray-400 border-gray-500/30",
-      "Under Review": "bg-blue-500/20 text-blue-400 border-blue-500/30",
-    }[s] || "bg-gray-500/20 text-gray-400 border-gray-500/30");
-
-  /* ---------- Render ---------- */
+  /* ---------------- render ---------------- */
   return (
     <Card className="bg-dark-card/95 border-gray-600 shadow-xl">
       <CardHeader className="pb-3">
@@ -166,15 +145,12 @@ const ProblemsList = ({ onEditProblem }) => {
           <FileText className="h-6 w-6 text-code-blue" />
           Browse Problems
         </CardTitle>
-        <p className="text-gray-400">
-          Find problems by title, difficulty, or tags
-        </p>
+        <p className="text-gray-400">Find problems by title, difficulty, or tags</p>
       </CardHeader>
 
       <CardContent>
-        {/* Search + Difficulty Filter */}
+        {/* search & filter */}
         <div className="mb-4 space-y-4">
-          {/* Search */}
           <div className="relative max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
@@ -188,7 +164,6 @@ const ProblemsList = ({ onEditProblem }) => {
             />
           </div>
 
-          {/* Difficulty dropdown */}
           <div className="flex gap-3">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -200,7 +175,6 @@ const ProblemsList = ({ onEditProblem }) => {
                   <ChevronDown className="h-4 w-4 ml-2" />
                 </Button>
               </DropdownMenuTrigger>
-
               <DropdownMenuContent
                 className="w-40 bg-dark-card border-gray-600 shadow-xl"
                 align="start"
@@ -213,9 +187,7 @@ const ProblemsList = ({ onEditProblem }) => {
                       setCurrentPage(1);
                     }}
                     className={`text-white cursor-pointer hover:bg-code-blue/20 hover:text-code-blue ${
-                      difficultyFilter === d
-                        ? "bg-code-blue/20 text-code-blue"
-                        : ""
+                      difficultyFilter === d ? "bg-code-blue/20 text-code-blue" : ""
                     }`}
                   >
                     {d}
@@ -226,48 +198,46 @@ const ProblemsList = ({ onEditProblem }) => {
           </div>
         </div>
 
-        {/* Count */}
+        {/* count */}
         <p className="text-gray-400 text-sm mb-3">
           {filteredProblems.length} problem
-          {filteredProblems.length !== 1 ? "s" : ""} found
+          {filteredProblems.length !== 1 ? "s" : ""}
+          {loading && " (loading…)"}
         </p>
 
-        {/* Table */}
+        {/* table */}
         <div className="rounded-md border border-gray-600 overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow className="border-gray-600 hover:bg-dark-card/30">
-                <TableHead className="text-gray-300 font-semibold">
+                <TableHead className="text-gray-300 font-semibold pl-10">
                   Problem
                 </TableHead>
                 <TableHead className="text-gray-300 font-semibold">
                   Difficulty
                 </TableHead>
                 <TableHead className="text-gray-300 font-semibold">Tags</TableHead>
-                <TableHead className="text-gray-300 font-semibold">
-                  Status
-                </TableHead>
-                <TableHead className="text-gray-300 font-semibold">
-                  Created
-                </TableHead>
-                <TableHead className="text-gray-300 font-semibold">
-                  Actions
-                </TableHead>
+                <TableHead className="text-gray-300 font-semibold">Status</TableHead>
+                <TableHead className="text-gray-300 font-semibold">Created</TableHead>
+                <TableHead className="text-gray-300 font-semibold">Actions</TableHead>
               </TableRow>
             </TableHeader>
 
             <TableBody>
               {paginatedProblems.map((p) => (
                 <TableRow
-                  key={p.id}
+                  key={p._id}
                   className="border-gray-600 hover:bg-dark-card/30 h-16 md:h-20 transition-colors"
                 >
-                  <TableCell className="text-white font-medium">
+                  <TableCell className="text-white font-medium pl-10">
                     {p.title}
                   </TableCell>
 
                   <TableCell>
-                    <Badge variant="outline" className={`font-semibold ${difficultyColor(p.difficulty)}`}>
+                    <Badge
+                      variant="outline"
+                      className={`font-semibold ${difficultyColor(p.difficulty)}`}
+                    >
                       {p.difficulty}
                     </Badge>
                   </TableCell>
@@ -295,12 +265,17 @@ const ProblemsList = ({ onEditProblem }) => {
                   </TableCell>
 
                   <TableCell>
-                    <Badge variant="outline" className={`font-semibold ${statusColor(p.status)}`}>
-                      {p.status}
+                    <Badge
+                      variant="outline"
+                      className="font-semibold bg-green-500/20 text-green-400 border-green-500/30"
+                    >
+                      Published
                     </Badge>
                   </TableCell>
 
-                  <TableCell className="text-gray-400">{p.created}</TableCell>
+                  <TableCell className="text-gray-400">
+                    {p.createdAt.split("T")[0]}
+                  </TableCell>
 
                   <TableCell>
                     <DropdownMenu>
@@ -312,7 +287,6 @@ const ProblemsList = ({ onEditProblem }) => {
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-
                       <DropdownMenuContent
                         align="end"
                         className="bg-dark-card border-gray-600 shadow-xl"
@@ -324,7 +298,6 @@ const ProblemsList = ({ onEditProblem }) => {
                           <Edit className="h-4 w-4 mr-2" />
                           Edit
                         </DropdownMenuItem>
-
                         <DropdownMenuItem
                           className="text-red-400 cursor-pointer hover:bg-red-500/20 hover:text-red-300"
                           onClick={() => handleDeleteProblem(p)}
@@ -341,14 +314,16 @@ const ProblemsList = ({ onEditProblem }) => {
           </Table>
         </div>
 
-        {/* No results */}
-        {paginatedProblems.length === 0 && (
+        {/* no results */}
+        {!loading && paginatedProblems.length === 0 && (
           <div className="text-center py-8">
-            <p className="text-gray-400">No problems found matching your criteria</p>
+            <p className="text-gray-400">
+              No problems found matching your criteria
+            </p>
           </div>
         )}
 
-        {/* Pagination */}
+        {/* pagination */}
         {totalPages > 1 && (
           <div className="mt-6 flex justify-center">
             <Pagination>
@@ -363,7 +338,6 @@ const ProblemsList = ({ onEditProblem }) => {
                     }`}
                   />
                 </PaginationItem>
-
                 <PaginationItem>
                   <PaginationLink
                     isActive
@@ -372,7 +346,6 @@ const ProblemsList = ({ onEditProblem }) => {
                     {validCurrentPage}
                   </PaginationLink>
                 </PaginationItem>
-
                 <PaginationItem>
                   <PaginationNext
                     onClick={() => handlePageChange(validCurrentPage + 1)}
@@ -390,6 +363,4 @@ const ProblemsList = ({ onEditProblem }) => {
       </CardContent>
     </Card>
   );
-};
-
-export default ProblemsList;
+}
