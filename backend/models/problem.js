@@ -2,46 +2,16 @@ const mongoose = require('mongoose');
 
 const ProblemSchema = new mongoose.Schema({
   title: { type: String, required: true },
-  description: { type: String, required: true },
-
-  inputDescription: {
-    type: String,
-    required: true
-  },
-
-  outputDescription: {
-    type: String,
-    required: true
-  },
-
-  sampleTestCases: {
-    type: [
-      {
-        input: { type: mongoose.Schema.Types.Mixed, required: true },
-        output: {  type: mongoose.Schema.Types.Mixed, required: true },
-      }
-    ],
-    default: []
-  },
+  statement : { type: String, required: true },
 
   constraints: {
-    type: mongoose.Schema.Types.Mixed,
-    required: true
-  },
-
-  inputSchema: {
-    type: mongoose.Schema.Types.Mixed,
-    required: true
-  },
-
-  outputSchema: {
-    type: mongoose.Schema.Types.Mixed,
+    type: String,
     required: true
   },
 
   timeLimit: {
     type: Number,
-    default: 1  
+    default: 2  
   },
 
   memoryLimit: {
@@ -60,6 +30,10 @@ const ProblemSchema = new mongoose.Schema({
     default: []
   },
 
+  createdBy: {
+    type : String,
+    required : true
+  },
   createdAt: {
     type: Date,
     default: Date.now

@@ -18,7 +18,10 @@ passport.use(new GoogleStrategy({
         name: profile.displayName,
         email,
         role: 'user', 
-        password: dummyPassword 
+        password: dummyPassword ,
+        GlobalRank : 0,
+        contestRating : -1000,
+        codingTitle: 'Newbie',
       });
       await user.save();
     }
