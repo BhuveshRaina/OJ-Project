@@ -9,8 +9,17 @@ const {
   deleteProblem,
   getProblemMeta,
   getMyProblems,
-  getProblemTestCases      
+  getProblemTestCases,
+  getProblemSummary,
+  listProblems,
+  getHotProblems
 } = require("../controllers/problemController");
+
+router.get(
+  '/',
+  authMiddleware,   
+  listProblems
+);
 
 router.post(
   "/addProblem",
@@ -54,6 +63,18 @@ router.delete(
   "/deleteProblem/:id",
   authMiddleware,
   deleteProblem
+);
+
+router.get(
+  "/summary",         
+  authMiddleware,
+  getProblemSummary
+);
+
+router.get(
+  "/hot",              
+  authMiddleware,
+  getHotProblems
 );
 
 module.exports = router;

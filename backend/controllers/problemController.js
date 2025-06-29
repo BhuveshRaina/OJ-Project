@@ -1,10 +1,11 @@
 const {ListObjectsV2Command, DeleteObjectsCommand } = require('@aws-sdk/client-s3');
 const s3                                    = require('../config/awsConfig');
 const uploadToS3                            = require('../utils/uploadToS3');
-const { getTestCasesFromS3 }                = require('../utils/S3fetcher');
+const { getTestCasesFromS3 }                = require('../utils/S3Fetcher');
 const Problem                               = require('../models/problem');
 const slugify                               = require('slugify');
 const deleteS3Folder = require('../utils/deleteS3Folder');
+
 
 exports.addProblem = async (req, res) => {
   try {
@@ -30,21 +31,22 @@ exports.addProblem = async (req, res) => {
       return res.status(400).json({ error: 'Uploaded files must be valid JSON.' });
     }
 
+    const count      = await Problem.countDocuments({});
+    const nextNumber = count + 1;
+
     const problem = new Problem({
-      title:       title.trim(),
-      statement:   statement.trim(),
-      constraints: constraints.trim(),
-      difficulty:  difficulty.trim(),
-      tags:        JSON.parse(tags),
-      createdBy:   req.user._id,
-      slug:        slugify(title, { lower: true, strict: true }),
+      title:          title.trim(),
+      statement:      statement.trim(),
+      constraints:    constraints.trim(),
+      difficulty:     difficulty.trim(),
+      tags:           JSON.parse(tags),
+      createdBy:      req.user._id,
+      slug:           slugify(title, { lower: true, strict: true }),
+      problemNumber:  nextNumber,    
     });
     await problem.save();
 
-    const id        = problem._id.toString();
-    const sampleKey = `${id}/sampleTestCases.json`;
-    const hiddenKey = `${id}/hiddenTestCases.json`;
-
+    const id = problem._id.toString();
     const [ sampleUrl, hiddenUrl ] = await Promise.all([
       uploadToS3(sampleFile.buffer,  id, 'sampleTestCases.json', sampleFile.mimetype),
       uploadToS3(hiddenFile.buffer, id, 'hiddenTestCases.json', hiddenFile.mimetype),
@@ -183,5 +185,87 @@ exports.getProblemTestCases = async (req, res) => {
     return res
       .status(500)
       .json({ error: "Failed to fetch test-case files." });
+  }
+};
+
+exports.getProblemSummary = async (req, res) => {
+  try {
+    const counts = await Problem.aggregate([
+      { $group: { _id: "$difficulty", count: { $sum: 1 } } }
+    ]);
+
+    const summary = counts.reduce(
+      (acc, cur) => ({ ...acc, [cur._id]: cur.count }),
+      { Easy: 0, Medium: 0, Hard: 0 }
+    );
+    const total = summary.Easy + summary.Medium + summary.Hard;
+
+    return res.json({ success: true, stats: { ...summary, total } });
+  } catch (err) {
+    console.error("Failed to build summary:", err);
+    return res.status(500).json({ success: false, error: "Server error" });
+  }
+};
+
+exports.listProblems = async (req, res) => {
+  try {
+    const limit = Math.min(+req.query.limit || 10, 50);
+    const page  = Math.max(+req.query.page  || 1,  1);
+    const skip  = (page - 1) * limit;
+
+    const query = {};
+
+    if (["Easy", "Medium", "Hard"].includes(req.query.difficulty)) {
+      query.difficulty = req.query.difficulty;
+    }
+
+    if (req.query.tags) {
+      const tags = req.query.tags
+        .split(",")
+        .map(t => t.trim())
+        .filter(Boolean);
+      if (tags.length) query.tags = { $in: tags };
+    }
+
+    if (req.query.solved === "true" || req.query.solved === "false") {
+      if (!req.user) {
+        return res.status(401).json({ error: "Auth required for solved filter" });
+      }
+      query._id = req.query.solved === "true"
+        ? { $in: req.user.solvedProblems }
+        : { $nin: req.user.solvedProblems };
+    }
+
+    const problems = await Problem.find(query)
+      .sort({ createdAt: 1 })
+      .skip(skip)
+      .limit(limit)
+      .select("title difficulty tags createdAt problemNumber _id");
+
+    const total = await Problem.countDocuments(query);
+
+    return res.json({
+      success: true,
+      page,
+      limit,
+      total,
+      problems
+    });
+  } catch (err) {
+    console.error("List problems failed:", err);
+    return res.status(500).json({ success: false, error: "Server error" });
+  }
+};
+
+exports.getHotProblems = async (req, res) => {
+  try {
+    const problems = await Problem.find({})
+      .sort({ createdAt: 1 })                 
+      .limit(4)                                  
+      .select("title difficulty tags createdAt problemNumber");
+    return res.json({ success: true, problems });
+  } catch (err) {
+    console.error("Failed to fetch hot problems:", err);
+    return res.status(500).json({ success: false, error: "Server error" });
   }
 };

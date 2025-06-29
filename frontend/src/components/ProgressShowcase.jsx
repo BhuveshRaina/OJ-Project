@@ -25,26 +25,28 @@ const ProgressShowcase = () => {
 
   // fetch platform-wide question counts
   useEffect(() => {
-    const fetchPlatformStats = async () => {
-      try {
-        const { data } = await axios.get('http://localhost:8000/api/problems/stats', { withCredentials: true })
-        if (data.success) {
-          setPlatformStats(data.stats)
-        }
-      } catch (err) {
-        console.error('Failed to fetch platform stats:', err)
-      }
+  const fetchPlatformStats = async () => {
+    try {
+      const { data } = await axios.get(
+        "http://localhost:8000/api/problems/summary",
+        { withCredentials: true }
+      );
+      if (data.success) setPlatformStats(data.stats);
+    } catch (err) {
+      console.error("Failed to fetch platform stats:", err);
     }
-    fetchPlatformStats()
-  }, [])
+  };
+  fetchPlatformStats();
+}, []);
+
 
   if (status === 'loading' || !user) {
     return null
   }
 
   const { solvedTotal, solvedEasy, solvedMedium, solvedHard } = user
-  const { total, easy, medium, hard } = platformStats
-
+  const { total, Easy, Medium, Hard } = platformStats
+  console.log(platformStats)
   return (
     <div className="flex justify-center w-full">
       <Card className="bg-dark-card border-gray-700 w-full pb-3 pt-2">
@@ -62,7 +64,8 @@ const ProgressShowcase = () => {
           {/* Easy */}
           <div className="bg-gray-800 border border-gray-700 rounded-lg p-3">
             <div className="text-green-500 font-semibold mb-2">Easy</div>
-            <div className="text-white text-lg mb-2">{solvedEasy}</div>
+            <span className="text-white text-lg mb-2">{solvedEasy}</span>
+            <span className='text-lg text-white'>/{Easy}</span>
             <div className="w-full bg-gray-700 rounded-full h-2">
               <div
                 className="bg-green-600 h-2 rounded-full transition-all duration-500"
@@ -77,7 +80,8 @@ const ProgressShowcase = () => {
           {/* Medium */}
           <div className="bg-gray-800 border border-gray-700 rounded-lg p-3">
             <div className="text-yellow-500 font-semibold mb-2">Medium</div>
-            <div className="text-white text-lg mb-2">{solvedMedium}</div>
+            <span className="text-white text-lg mb-2">{solvedMedium}</span>
+            <span className='text-lg text-white'>/{Medium}</span>
             <div className="w-full bg-gray-700 rounded-full h-2">
               <div
                 className="bg-yellow-500 h-2 rounded-full transition-all duration-500"
@@ -92,7 +96,8 @@ const ProgressShowcase = () => {
           {/* Hard */}
           <div className="bg-gray-800 border border-gray-700 rounded-lg p-3">
             <div className="text-red-600 font-semibold mb-2">Hard</div>
-            <div className="text-white text-lg mb-2">{solvedHard}</div>
+            <span className="text-white text-lg mb-2">{solvedHard}</span>
+             <span className='text-lg text-white'>/{Hard}</span>
             <div className="w-full bg-gray-700 rounded-full h-2">
               <div
                 className="bg-red-600 h-2 rounded-full transition-all duration-500"

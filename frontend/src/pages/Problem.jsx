@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
+import axios from 'axios';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
@@ -11,70 +11,85 @@ import {
 } from '@/components/ui/dropdown-menu';
 import {
   Search,
-  Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
 } from 'lucide-react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import ProblemSlider from '@/components/ProblemSlider';
 import ProblemCard from '@/components/ProblemCard';
 import ProblemStats from '@/components/ProblemStats';
+import Footer from '@/components/Footer';
 
 const Problems = () => {
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [searchTerm, setSearchTerm] = useState('');
+  // pull solvedProblems (array of string IDs) from Redux
+  const { user } = useSelector(state => state.auth);
+  const solvedProblems = user?.solvedProblems?.map(id => id.toString()) || [];
+
+  const [searchTerm, setSearchTerm]             = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState('All');
-  const [statusFilter, setStatusFilter] = useState('All');
-  const [topicFilter, setTopicFilter] = useState('All Topics');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [statusFilter, setStatusFilter]         = useState('All');
+  const [topicFilter, setTopicFilter]           = useState('All Topics');
+  const [currentPage, setCurrentPage]           = useState(1);
+
+  const [problems, setProblems] = useState([]);
+  const [total, setTotal]       = useState(0);
+  const [loading, setLoading]   = useState(false);
 
   const userProgressLevel = 3;
-  const problemsPerPage = userProgressLevel * 5;
+  const problemsPerPage   = userProgressLevel * 5;
 
-  const problems = [
-    { id:1, title:'Two Sum', difficulty:'Easy', acceptance:'55.8%', solved:true,  topics:['Array','Hash Table'],            premium:false },
-    { id:2, title:'Add Two Numbers', difficulty:'Medium', acceptance:'46.2%', solved:false, topics:['Linked List','Math'],            premium:false },
-    { id:3, title:'Longest Substring Without Repeating Characters', difficulty:'Medium', acceptance:'37.0%', solved:true,  topics:['Hash Table','String','Sliding Window'], premium:false },
-    { id:4, title:'Median of Two Sorted Arrays', difficulty:'Hard', acceptance:'43.8%', solved:false, topics:['Array','Binary Search','Divide and Conquer'], premium:false },
-    { id:5, title:'Longest Palindromic Substring', difficulty:'Medium', acceptance:'35.9%', solved:true,  topics:['String','Dynamic Programming'],    premium:true  },
-    { id:6, title:'Container With Most Water', difficulty:'Medium', acceptance:'54.1%', solved:false, topics:['Array','Two Pointers'],            premium:false },
-    { id:7, title:'3Sum', difficulty:'Medium', acceptance:'32.1%', solved:true,  topics:['Array','Two Pointers','Sorting'], premium:false },
-    { id:8, title:'Regular Expression Matching', difficulty:'Hard', acceptance:'27.5%', solved:false, topics:['String','Dynamic Programming','Recursion'], premium:false },
-    { id:9, title:'Valid Parentheses', difficulty:'Easy', acceptance:'40.8%', solved:true,  topics:['String','Stack'],                 premium:false },
-    { id:10,title:'Merge Two Sorted Lists', difficulty:'Easy', acceptance:'62.3%', solved:false, topics:['Linked List','Recursion'],           premium:false },
-    { id:11,title:'Best Time to Buy and Sell Stock', difficulty:'Easy', acceptance:'58.1%', solved:true,  topics:['Array','Dynamic Programming'],   premium:false },
-    { id:12,title:'Maximum Subarray', difficulty:'Medium', acceptance:'49.5%', solved:false, topics:['Array','Dynamic Programming'],   premium:false },
-    { id:13,title:'Climbing Stairs', difficulty:'Easy', acceptance:'52.3%', solved:true,  topics:['Math','Dynamic Programming'],    premium:false },
-    { id:14,title:'Binary Tree Inorder Traversal', difficulty:'Easy', acceptance:'76.8%', solved:false, topics:['Stack','Tree','Binary Tree'],      premium:false },
-    { id:15,title:'Maximum Depth of Binary Tree', difficulty:'Easy', acceptance:'73.9%', solved:true,  topics:['Tree','Binary Tree','DFS'],       premium:false },
-    { id:16,title:'Same Tree', difficulty:'Easy', acceptance:'57.2%', solved:false, topics:['Tree','Binary Tree','DFS'],       premium:false },
-    { id:17,title:'Symmetric Tree', difficulty:'Easy', acceptance:'52.4%', solved:true,  topics:['Tree','Binary Tree','DFS'],       premium:false },
-    { id:18,title:'Convert Sorted Array to Binary Search Tree', difficulty:'Easy', acceptance:'68.9%', solved:false, topics:['Array','Tree','Binary Search Tree'], premium:false },
-    { id:19,title:"Pascal's Triangle", difficulty:'Easy', acceptance:'70.1%', solved:true,  topics:['Array','Dynamic Programming'],   premium:false },
-    { id:20,title:'Single Number', difficulty:'Easy', acceptance:'71.2%', solved:false, topics:['Array','Bit Manipulation'],        premium:false }
-  ];
-
-  const topics      = ['All Topics','Array','Hash Table','String','Linked List','Math','Binary Search','Dynamic Programming'];
+  const topics      = ['All Topics','Array','Hash Table','String','Linked List','Math','Binary Search','Dynamic Programming','Math','Brute Force','Geometry'];
   const difficulties = ['All','Easy','Medium','Hard'];
   const statuses    = ['All','Solved','Unsolved'];
 
-  // apply filters
-  const filteredProblems = problems.filter(p =>
-    p.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
-    (difficultyFilter === 'All' || p.difficulty === difficultyFilter) &&
-    (statusFilter === 'All' ||
-      (statusFilter === 'Solved' && p.solved) ||
-      (statusFilter === 'Unsolved' && !p.solved)
-    ) &&
-    (topicFilter === 'All Topics' || p.topics.includes(topicFilter))
-  );
+  useEffect(() => {
+    const fetchProblems = async () => {
+      setLoading(true);
+      try {
+        const params = {
+          page:  currentPage,
+          limit: problemsPerPage,
+        };
+        if (difficultyFilter !== 'All')      params.difficulty = difficultyFilter;
+        if (topicFilter      !== 'All Topics') params.tags       = topicFilter;
+        if (statusFilter     !== 'All') {
+          if (statusFilter === 'Solved')   params.solved = 'true';
+          if (statusFilter === 'Unsolved') params.solved = 'false';
+        }
+        if (searchTerm.trim())               params.search = searchTerm.trim();
 
-  // pagination
-  const totalPages        = Math.ceil(filteredProblems.length / problemsPerPage);
-  const startIndex        = (currentPage - 1) * problemsPerPage;
-  const paginatedProblems = filteredProblems.slice(startIndex, startIndex + problemsPerPage);
+        const { data } = await axios.get(
+          'http://localhost:8000/api/problems',
+          { params, withCredentials: true }
+        );
+
+        if (data.success) {
+          // inject solved flag here
+          const withSolved = data.problems.map(p => ({
+            ...p,
+            solved: solvedProblems.includes(p._id.toString())
+          }));
+          setProblems(withSolved);
+          setTotal(data.total);
+        }
+      } catch (err) {
+        console.error('Failed to load problems:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProblems();
+  }, [
+    searchTerm,
+    difficultyFilter,
+    statusFilter,
+    topicFilter,
+    currentPage,
+    // note: solvedProblems not in deps, so we don't refetch when user solves new ones
+  ]);
+
+  const totalPages = Math.ceil(total / problemsPerPage);
 
   const handleNextPage = () => setCurrentPage(cp => Math.min(cp + 1, totalPages));
   const handlePrevPage = () => setCurrentPage(cp => Math.max(cp - 1, 1));
@@ -86,23 +101,6 @@ const Problems = () => {
     if (type === 'topic')      setTopicFilter(value);
     if (type === 'search')     setSearchTerm(value);
   };
-
-  // daily challenge decorator
-  const dailyChallengeData = [
-    { date:new Date(2025,5,1), solved:false },
-    { date:new Date(2025,5,2), solved:true  },
-    { date:new Date(2025,5,3), solved:true  },
-    { date:new Date(2025,5,4), solved:false },
-    { date:new Date(2025,5,5), solved:true  },
-    { date:new Date(2025,5,6), solved:false },
-    { date:new Date(2025,5,7), solved:true  },
-    { date:new Date(2025,5,8), solved:true  },
-    { date:new Date(2025,5,9), solved:false },
-    { date:new Date(2025,5,10),solved:true  }
-  ];
-  const fmt = d => d ? `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}` : '';
-  const getDailyChallengeStatus = d =>
-    d ? dailyChallengeData.find(ch => fmt(ch.date) === fmt(d)) : undefined;
 
   return (
     <div className="min-h-screen flex flex-col bg-dark-bg">
@@ -133,6 +131,7 @@ const Problems = () => {
         <div className="container grid lg:grid-cols-4 gap-8">
           {/* Filters & List */}
           <div className="lg:col-span-3">
+            {/* Filters */}
             <div className="mb-6 space-y-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -140,7 +139,7 @@ const Problems = () => {
                   placeholder="Search problems..."
                   value={searchTerm}
                   onChange={e => handleFilterChange('search', e.target.value)}
-                  className="pl-10 bg-dark-card/80 border-gray-600 text-white placeholder-gray-400 focus:border-code-blue focus:ring-code-blue/20"
+                  className="pl-10 bg-dark-card/80 border-gray-600 text-white  placeholder-gray-400 focus:border-code-blue focus:ring-code-blue/20"
                 />
               </div>
               <div className="flex flex-wrap gap-3">
@@ -206,14 +205,19 @@ const Problems = () => {
               </div>
             </div>
 
+            {/* Summary */}
             <p className="text-gray-400 text-sm mb-4">
-              {filteredProblems.length} problem{filteredProblems.length !== 1 ? 's' : ''} found (Level {userProgressLevel}: {problemsPerPage} per page)
+              {loading ? 'Loading…' : `${total} problems found`} (Level {userProgressLevel}: {problemsPerPage} per page)
             </p>
 
+            {/* Problem cards */}
             <div className="space-y-3 mb-6">
-              {paginatedProblems.map(p => <ProblemCard key={p.id} problem={p} />)}
+              {problems.map(p => (
+                <ProblemCard key={p._id} problem={p} />
+              ))}
             </div>
 
+            {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-center gap-4 mt-8">
                 <Button
@@ -247,33 +251,14 @@ const Problems = () => {
             )}
           </div>
 
+          {/* Sidebar */}
           <div className="lg:col-span-1">
             <div className="space-y-6 sticky top-8">
-              <Card className="bg-dark-card/95 border-gray-600 shadow-xl overflow-hidden">
-                <CardHeader className="pb-0">
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <CalendarIcon className="h-5 w-5 text-code-blue" />
-                    Daily Challenge - June 2025
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-3">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={setSelectedDate}
-                    defaultMonth={new Date(2025, 5)}
-                    className="w-full text-white border-0 bg-transparent [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full"
-                  />
-                </CardContent>
-              </Card>
-
               <ProblemStats />
             </div>
           </div>
         </div>
       </section>
-
-   
     </div>
   );
 };

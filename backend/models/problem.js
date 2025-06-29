@@ -1,9 +1,13 @@
+const { required } = require('joi');
 const mongoose = require('mongoose');
 
 const ProblemSchema = new mongoose.Schema({
   title: { type: String, required: true },
   statement : { type: String, required: true },
-
+  problemNumber : {
+    type : Number,
+    required : true,
+  },
   constraints: {
     type: String,
     required: true
