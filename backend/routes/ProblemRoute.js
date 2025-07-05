@@ -12,7 +12,8 @@ const {
   getProblemTestCases,
   getProblemSummary,
   listProblems,
-  getHotProblems
+  getHotProblems,
+  getProblemMetaAndSampleByNumber
 } = require("../controllers/problemController");
 
 router.get(
@@ -69,6 +70,12 @@ router.get(
   "/summary",         
   authMiddleware,
   getProblemSummary
+);
+
+router.get(
+  '/sample/number/:number',
+  authMiddleware,
+  getProblemMetaAndSampleByNumber
 );
 
 router.get(

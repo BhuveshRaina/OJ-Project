@@ -1,384 +1,276 @@
-import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Check, AlertCircle, Play, ChevronDown } from 'lucide-react';
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import React, { useState, useEffect, useRef } from "react";
+import { useParams } from "react-router-dom";
+import axios from "axios";
+import { useToast } from "@/hooks/use-toast";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import CodeEditor from '@/components/CodeEditor';
-import TestCasePanel from '@/components/TestCasePanel';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import CodeEditor from "../components/CodeEditor";
+import ProblemDescription from "../components/ProblemDescription";
+import TestCases from "../components/TestCases";
 
-const ProblemEditor = () => {
-  const [selectedLanguage, setSelectedLanguage] = useState('cpp');
-  const [code, setCode] = useState('');
-  const [output, setOutput] = useState('');
-  const [verdict, setVerdict] = useState('');
-  const [isRunning, setIsRunning] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState('testcase');
-  const [showTags, setShowTags] = useState(false);
+export default function RunPage() {
+  const { id } = useParams();
+  const { toast } = useToast();
 
-  /* ───────────────────────────────────────────
-     MOCK PROBLEM DATA
-  ─────────────────────────────────────────── */
-  const problem = {
-    id: 2,
-    title: 'Add Two Numbers',
-    difficulty: 'Medium',
-    status: 'solved', // "solved", "attempted", or "unattempted"
-    description:
-      'You are given two non-empty linked lists representing two non-negative integers. The digits are stored in reverse order, and each of their nodes contains a single digit. Add the two numbers and return the sum as a linked list.',
-    constraints: [
-      'The number of nodes in each linked list is in the range [1, 100].',
-      '0 ≤ Node.val ≤ 9',
-      'It is guaranteed that the list represents a number that does not have leading zeros.',
-    ],
-    examples: [
-      {
-        input: 'l1 = [2,4,3], l2 = [5,6,4]',
-        output: '[7,0,8]',
-        explanation: '342 + 465 = 807',
-      },
-      {
-        input: 'l1 = [0], l2 = [0]',
-        output: '[0]',
-        explanation: '0 + 0 = 0',
-      },
-      {
-        input: 'l1 = [9,9,9,9,9,9,9], l2 = [9,9,9,9]',
-        output: '[8,9,9,9,0,0,0,1]',
-        explanation: '9999999 + 9999 = 10009998',
-      },
-      {
-        input: 'l1 = [1,2], l2 = [3,4,5]',
-        output: '[4,6,5]',
-        explanation: '21 + 543 = 564',
-      },
-    ],
-    tags: ['Linked List', 'Math', 'Recursion'],
+  /* ──────────────── problem + boilerplate ──────────────── */
+  const [problem, setProblem]             = useState(null);
+  const [sampleTestCases, setSampleCases] = useState([]);
+  const [loading, setLoading]             = useState(true);
+
+  const [userCases, setUserCases]         = useState([]);
+  const [selectedLang, setSelectedLang]   = useState("cpp");
+  const [code, setCode]                   = useState(getBoilerplate("cpp"));
+
+  /* ──────────────── run (sample tests) ──────────────── */
+  const [running, setRunning]             = useState(false);
+  const [runId, setRunId]                 = useState(null);
+  const [outputs, setOutputs]             = useState([]);
+  const [compileErrRun, setCompileErrRun] = useState(null);     // compile error during Run
+  const runPollRef = useRef(null);
+
+  /* ──────────────── submit (hidden tests) ──────────────── */
+  const [submitting, setSubmitting]       = useState(false);
+  const [submissionId, setSubmissionId]   = useState(null);
+  const [verdict, setVerdict]             = useState(null);     // Accepted / WA / etc.
+  const [compileErrSubm, setCompileErrSubm] = useState(null);   // compile error during Submit
+  const submPollRef = useRef(null);
+
+  /* ──────────────── load problem on mount ──────────────── */
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await axios.get(
+          `http://localhost:8000/api/problems/sample/number/${id}`,
+          { withCredentials: true }
+        );
+        if (data.success) {
+          setProblem(data.problem);
+          setSampleCases(data.sampleTestCases);
+        } else {
+          toast({ title: "Error", description: data.error, variant: "destructive" });
+        }
+      } catch (err) {
+        console.error(err);
+        toast({ title: "Error", description: "Could not load problem", variant: "destructive" });
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [id, toast]);
+
+  /* ──────────────── initialise sample cases ──────────────── */
+  useEffect(() => {
+    if (sampleTestCases.length) {
+      setUserCases(sampleTestCases.map(tc => ({
+        input: tc.input,
+        expectedOutput: tc.expectedOutput,
+      })));
+    }
+  }, [sampleTestCases]);
+
+  /* ──────────────── helpers ──────────────── */
+  function getBoilerplate(lang) {
+    switch (lang) {
+      case "cpp":
+        return `#include <bits/stdc++.h>\nusing namespace std;\nint main(){\n  cout << "Hello";\n  return 0;\n}`;
+      case "java":
+        return `public class Main {\n  public static void main(String[] args){\n    System.out.println("Hello");\n  }\n}`;
+      case "python":
+        return `print("Hello")`;
+      default:
+        return "";
+    }
+  }
+
+  const handleLanguageChange = (lang) => {
+    setSelectedLang(lang);
+    setCode(getBoilerplate(lang));
   };
 
-  const languages = [
-    { value: 'cpp', label: 'C++' },
-    { value: 'java', label: 'Java' },
-    { value: 'python', label: 'Python' },
-  ];
+  const handleRun = async () => {
+    if (!problem) return;
 
-  /* ───────────────────────────────────────────
-     HELPERS
-  ─────────────────────────────────────────── */
-  const getDifficultyColor = (difficulty) => {
-    switch (difficulty) {
-      case 'Easy':
-        return 'bg-code-green/20 text-code-green hover:bg-code-green/30';
-      case 'Medium':
-        return 'bg-code-orange/20 text-code-orange hover:bg-code-orange/30';
-      case 'Hard':
-        return 'bg-red-500/20 text-red-400 hover:bg-red-500/30';
-      default:
-        return 'bg-gray-500/20 text-gray-400';
+    setRunning(true);
+    setOutputs([]);
+    setCompileErrRun(null);
+
+    try {
+      const payload = {
+        problemNumber: problem.problemNumber,
+        code,
+        language: selectedLang,
+        testCases: userCases.map(tc => ({ input: tc.input })),
+      };
+      const { data } = await axios.post("http://localhost:8000/api/run", payload, { withCredentials: true });
+      setRunId(data.runId);
+    } catch (err) {
+      console.error(err);
+      toast({ title: "Error", description: "Could not start run", variant: "destructive" });
+      setRunning(false);
     }
   };
 
-  const renderStatusIndicator = (status) => {
-    switch (status) {
-      case 'solved':
-        return (
-          <div className="absolute top-4 right-4 z-10">
-            <Check className="w-6 h-6 text-code-green" />
-          </div>
-        );
-      case 'attempted':
-        return (
-          <div className="absolute top-4 right-4 z-10">
-            <div className="relative">
-              <div className="w-8 h-8 bg-code-orange/20 rounded-full flex items-center justify-center">
-                <AlertCircle className="w-5 h-5 text-code-orange" />
-              </div>
-            </div>
-          </div>
-        );
-      case 'unattempted':
-        return (
-          <div className="absolute top-4 right-4 z-10">
-            <div className="relative flex items-center justify-center">
-              <div className="w-8 h-8 border-2 border-gray-400/40 rounded-full absolute"></div>
-              <div className="w-6 h-6 border-2 border-gray-400/60 rounded-full absolute"></div>
-              <div className="w-4 h-4 border-2 border-gray-400/80 rounded-full"></div>
-            </div>
-          </div>
-        );
-      default:
-        return null;
+  useEffect(() => {
+    if (!runId) return;
+    const start = Date.now();
+
+    runPollRef.current = setInterval(async () => {
+      const elapsed = Date.now() - start;
+      if (elapsed > 10_000) {         
+        clearInterval(runPollRef.current);
+        setRunning(false);
+        toast({ title: "Timeout", description: "Run timed out, please try again", variant: "destructive" });
+        return;
+      }
+
+      try {
+        const { data } = await axios.get(`http://localhost:8000/api/run/${runId}`, { withCredentials: true });
+        setOutputs((data.outputs || []).map(o => o.output));
+
+        if (data.verdict !== "pending") {
+          clearInterval(runPollRef.current);
+          setRunning(false);
+
+          if (data.verdict === "Compilation Error") {
+            const msg = data.error || "Compilation Error";
+            setCompileErrRun(msg);
+            setOutputs(Array(userCases.length).fill(msg));
+            toast({ title: "Compilation Error", description: msg, variant: "destructive" });
+          } else if (data.verdict !== "done") {
+            toast({ title: data.verdict, description: data.error || "", variant: "destructive" });
+          }
+        }
+      } catch (err) {
+        console.error(err);
+        clearInterval(runPollRef.current);
+        setRunning(false);
+      }
+    }, 500);
+
+    return () => clearInterval(runPollRef.current);
+  }, [runId, userCases.length, toast]);
+
+  /* ──────────────── SUBMIT handler ──────────────── */
+  const handleSubmit = async () => {
+    if (!problem) return;
+
+    setSubmitting(true);
+    setVerdict(null);
+    setCompileErrSubm(null);
+
+    try {
+      const payload = {
+        problemNumber: problem.problemNumber,
+        code,
+        language: selectedLang,
+      };
+      const { data } = await axios.post("http://localhost:8000/api/submit", payload, { withCredentials: true });
+      setSubmissionId(data.submissionId);
+    } catch (err) {
+      console.error(err);
+      toast({ title: "Error", description: "Could not submit code", variant: "destructive" });
+      setSubmitting(false);
     }
   };
 
-  /* ───────────────────────────────────────────
-     ACTION HANDLERS
-  ─────────────────────────────────────────── */
-  const handleRun = () => {
-    setIsRunning(true);
-    setActiveTab('result');
-    setTimeout(() => {
-      setOutput('Sample output for your code execution...');
-      setVerdict('');
-      setIsRunning(false);
-    }, 2000);
-  };
+  /* ──────────────── SUBMIT polling (10 s) ──────────────── */
+  useEffect(() => {
+    if (!submissionId) return;
+    const start = Date.now();
 
-  const handleSubmit = () => {
-    setIsSubmitting(true);
-    setActiveTab('result');
-    setTimeout(() => {
-      const verdicts = [
-        'Accepted',
-        'Wrong Answer on test case 13',
-        'Runtime Error',
-        'Compilation Error',
-        'Time Limit Exceeded',
-      ];
-      const randomVerdict = verdicts[Math.floor(Math.random() * verdicts.length)];
-      setVerdict(randomVerdict);
-      setOutput('');
-      setIsSubmitting(false);
-    }, 3000);
-  };
+    submPollRef.current = setInterval(async () => {
+      const elapsed = Date.now() - start;
+      if (elapsed > 10_000) {          // 10-s timeout for judging
+        clearInterval(submPollRef.current);
+        setSubmitting(false);
+        toast({ title: "Timeout", description: "Judging took too long", variant: "destructive" });
+        return;
+      }
 
-  /* ───────────────────────────────────────────
-     RENDER
-  ─────────────────────────────────────────── */
+      try {
+        const { data } = await axios.get(
+          `http://localhost:8000/api/submit/${submissionId}`,
+          { withCredentials: true }
+        );
+
+        if (data.verdict === "pending") return;
+
+        clearInterval(submPollRef.current);
+        setSubmitting(false);
+        setVerdict(data.verdict);
+
+        if (data.verdict === "Compilation Error") {
+          const msg = data.error || "Compilation Error";
+          setCompileErrSubm(msg);
+          /* For consistency, mirror into outputs too */
+          setOutputs(Array(userCases.length).fill(msg));
+          toast({ title: "Compilation Error", description: msg, variant: "destructive" });
+        } else if (data.verdict !== "Accepted") {
+          toast({ title: data.verdict, description: data.error || "", variant: "destructive" });
+        } else {
+          toast({ title: "Accepted 🎉", description: "All hidden tests passed!" });
+        }
+      } catch (err) {
+        console.error(err);
+        clearInterval(submPollRef.current);
+        setSubmitting(false);
+      }
+    }, 1000);
+
+    return () => clearInterval(submPollRef.current);
+  }, [submissionId, userCases.length, toast]);
+
+  /* ──────────────── guards ──────────────── */
+  if (loading)  return <div className="p-6 text-gray-400">Loading…</div>;
+  if (!problem) return <div className="p-6 text-red-400">Problem not found</div>;
+
+  /* ──────────────── render ──────────────── */
   return (
-    <div className="min-h-screen bg-dark-bg text-white flex flex-col">
+    <div className="h-screen bg-[#0f1419] text-gray-100 overflow-hidden">
+      <ResizablePanelGroup direction="horizontal" className="h-full">
+        {/* description */}
+        <ResizablePanel defaultSize={45} minSize={30}>
+          <ProblemDescription problem={problem} sampleTestCases={sampleTestCases} />
+        </ResizablePanel>
 
-      {/* MAIN LAYOUT */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <ResizablePanelGroup direction="horizontal" className="flex-1">
-          {/* LEFT: Problem */}
-          <ResizablePanel defaultSize={50} minSize={30} className="relative">
-            {renderStatusIndicator(problem.status)}
+        <ResizableHandle className="w-2 bg-[#1e2328] hover:bg-[#2a2f36] transition-colors" />
 
-            <div className="h-full overflow-y-auto">
-              <div className="p-6">
-                {/* Header */}
-                <div className="mb-6">
-                  <div className="flex items-baseline gap-3 mb-3">
-                    <span className="text-white text-lg font-light">{problem.id}.</span>
-                    <h1 className="text-xl font-bold">{problem.title}</h1>
-                  </div>
+        {/* editor + test cases */}
+        <ResizablePanel defaultSize={55} minSize={40}>
+          <ResizablePanelGroup direction="vertical" className="h-full">
+            {/* code editor */}
+            <ResizablePanel defaultSize={70} minSize={40}>
+              <CodeEditor
+                language={selectedLang}
+                code={code}
+                onCodeChange={setCode}
+                onLanguageChange={handleLanguageChange}
+                running={running}
+                submitting={submitting}
+                onRun={handleRun}
+                onSubmit={handleSubmit}
+              />
+            </ResizablePanel>
 
-                  <Badge className={getDifficultyColor(problem.difficulty)}>{problem.difficulty}</Badge>
-                </div>
+            <ResizableHandle className="h-2 bg-[#1e2328] hover:bg-[#2a2f36] transition-colors" />
 
-                {/* Description */}
-                <div className="mb-6">
-                  <p className="text-gray-300 leading-relaxed">{problem.description}</p>
-                </div>
-
-                {/* Examples */}
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold mb-4">Examples</h3>
-                  {problem.examples.map((ex, i) => (
-                    <Card key={i} className="bg-dark-card/50 border-gray-600 mb-4">
-                      <CardContent className="p-4">
-                        <div className="mb-2">
-                          <span className="text-sm font-medium text-gray-400">Input:</span>
-                          <code className="ml-2 text-white font-mono text-sm">{ex.input}</code>
-                        </div>
-                        <div className="mb-2">
-                          <span className="text-sm font-medium text-gray-400">Output:</span>
-                          <code className="ml-2 text-white font-mono text-sm">{ex.output}</code>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-
-                {/* Constraints */}
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold mb-3">Constraints</h3>
-                  {problem.constraints.map((c, i) => (
-                    <div key={i} className="text-gray-300 text-sm">
-                      • {c}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Tags */}
-                <div className="mb-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold">Tags</h3>
-                    <Button
-                      onClick={() => setShowTags(!showTags)}
-                      variant="ghost"
-                      size="sm"
-                      className="text-gray-300 hover:text-white hover:bg-gray-700/50"
-                    >
-                      {showTags ? 'Hide' : 'Show'}
-                    </Button>
-                  </div>
-                  {showTags && (
-                    <div className="flex flex-wrap gap-2">
-                      {problem.tags.map((tag) => (
-                        <Badge
-                          key={tag}
-                          variant="secondary"
-                          className="bg-gray-700/80 text-white hover:bg-gray-600/80 cursor-pointer border border-gray-500"
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </ResizablePanel>
-
-          <ResizableHandle withHandle className="bg-gray-700 hover:bg-gray-600" />
-
-          {/* RIGHT: Editor & Results */}
-          <ResizablePanel defaultSize={50} minSize={30} className="relative">
-            {renderStatusIndicator(problem.status)}
-
-            <ResizablePanelGroup direction="vertical" className="h-full">
-              {/* CODE EDITOR */}
-              <ResizablePanel defaultSize={70} minSize={30}>
-                <div className="flex flex-col h-full">
-                  {/* Editor toolbar */}
-                  <div className="border-b border-gray-700 p-4">
-                    <div className="flex items-center justify-between">
-                      {/* Language dropdown */}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className="bg-dark-card border-gray-600 text-white hover:bg-gray-700 px-3 py-2 flex items-center gap-2 w-24 justify-between"
-                          >
-                            {languages.find((l) => l.value === selectedLanguage)?.label}
-                            <ChevronDown className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="bg-dark-card border-gray-600 w-24" align="start">
-                          {languages.map((lang) => (
-                            <DropdownMenuItem
-                              key={lang.value}
-                              onClick={() => setSelectedLanguage(lang.value)}
-                              className="text-white hover:bg-gray-700 cursor-pointer"
-                            >
-                              {lang.label}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-
-                      <span className="text-gray-400 text-sm">Auto</span>
-
-                      {/* Run / Submit */}
-                      <div className="flex items-center gap-2">
-                        <Button
-                          onClick={handleRun}
-                          disabled={isRunning}
-                          variant="outline"
-                          size="sm"
-                          className="bg-dark-bg border-gray-600 text-white hover:bg-gray-700 w-20"
-                        >
-                          <Play className="w-4 h-4 mr-1" />
-                          {isRunning ? 'Running...' : 'Run'}
-                        </Button>
-                        <Button
-                          onClick={handleSubmit}
-                          disabled={isSubmitting}
-                          size="sm"
-                          className="bg-code-green hover:bg-code-green/80 text-white w-28 h-9"
-                        >
-                          {isSubmitting ? 'Submitting...' : 'Submit'}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Monaco / CodeMirror component */}
-                  <div className="flex-1">
-                    <CodeEditor language={selectedLanguage} value={code} onChange={setCode} />
-                  </div>
-                </div>
-              </ResizablePanel>
-
-              <ResizableHandle withHandle className="bg-gray-700 hover:bg-gray-600" />
-
-              {/* OUTPUT / TESTCASES */}
-              <ResizablePanel defaultSize={30} minSize={20}>
-                <div className="h-full border-t border-gray-700">
-                  <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-                    <TabsList className="bg-dark-card border-b border-gray-700 rounded-none justify-start p-0">
-                      <TabsTrigger
-                        value="testcase"
-                        className="text-white data-[state=inactive]:text-white hover:bg-white hover:text-gray-600 data-[state=active]:bg-white data-[state=active]:text-gray-600"
-                      >
-                        Testcase
-                      </TabsTrigger>
-                      <TabsTrigger
-                        value="result"
-                        className="text-white data-[state=inactive]:text-white hover:bg-white hover:text-gray-600 data-[state=active]:bg-white data-[state=active]:text-gray-600"
-                      >
-                        Test Result
-                      </TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="testcase" className="flex-1 overflow-hidden">
-                      <ScrollArea className="h-full">
-                        <div className="p-4 pl-6">
-                          <TestCasePanel />
-                        </div>
-                      </ScrollArea>
-                    </TabsContent>
-
-                    <TabsContent value="result" className="flex-1 p-4">
-                      {verdict && (
-                        <div
-                          className={`p-3 rounded-md mb-4 ${
-                            verdict === 'Accepted'
-                              ? 'bg-code-green/20 text-code-green border border-code-green/30'
-                              : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                          }`}
-                        >
-                          <div className="font-semibold">{verdict}</div>
-                        </div>
-                      )}
-
-                      {output && (
-                        <div className="bg-dark-card/50 border border-gray-600 rounded-md p-3">
-                          <div className="text-sm text-gray-400 mb-2">Output:</div>
-                          <pre className="text-white font-mono text-sm whitespace-pre-wrap">{output}</pre>
-                        </div>
-                      )}
-
-                      {(isRunning || isSubmitting) && (
-                        <div className="flex items-center justify-center h-32">
-                          <span className="text-gray-400">
-                            {isRunning ? 'Running your code...' : 'Submitting your solution...'}
-                          </span>
-                        </div>
-                      )}
-                    </TabsContent>
-                  </Tabs>
-                </div>
-              </ResizablePanel>
-            </ResizablePanelGroup>
-          </ResizablePanel>
-        </ResizablePanelGroup>
-      </div>
+            {/* test cases */}
+            <ResizablePanel defaultSize={30} minSize={20}>
+              <TestCases
+                testCases={userCases}
+                setTestCases={setUserCases}
+                running={running}
+                outputs={outputs}
+                compileError={compileErrRun || compileErrSubm}
+                verdict={verdict}
+              />
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   );
-};
-
-export default ProblemEditor;
+}

@@ -34,9 +34,9 @@ export default function App() {
           <Route path="/problems"    element={<ProtectedRoute><Problem /></ProtectedRoute>} />
           <Route path="/dashboard"   element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/contests"    element={<ProtectedRoute><Contest /></ProtectedRoute>} />
-          <Route path="/problems/:id" element={<ProtectedRoute><ProblemEditor /></ProtectedRoute>} />
           <Route path="/createProblem" element={<ProtectedRoute><ProblemSetter /></ProtectedRoute>} />
         </Route>
+          <Route path="/problems/:id" element={<ProtectedRoute><ProblemEditor /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   );

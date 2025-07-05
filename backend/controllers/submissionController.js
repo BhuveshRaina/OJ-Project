@@ -1,12 +1,11 @@
 const Submission = require('../models/submission');
-const { getTestCasesFromS3 } = require("../utils/s3Fetcher")
-const submissionQueue = require('../config/redisConfig');
+const  {getTestCasesFromS3}  = require('../utils/s3Fetcher');
+const {submissionQueue} = require('../config/redisConfig');
 const { required } = require('joi');
 
 exports.createSubmission = async (req, res) => {
   try {
     const { problemId, code, language, problemName } = req.body;
-
     if (!problemId || !code || !language || !problemName) {
       return res.status(400).json({
         success: false,

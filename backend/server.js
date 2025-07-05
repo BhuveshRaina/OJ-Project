@@ -4,7 +4,6 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const passport = require('passport');
 const bodyParser = require('body-parser');
-const boilerplateRoutes = require('./routes/boilerplateRoutes');
 const cookieParser = require('cookie-parser');
 
 const app = express();
@@ -19,12 +18,12 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(passport.initialize());
 app.use(cookieParser());
 
-app.use('/boilerplate', boilerplateRoutes);
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/auth/google', require('./routes/googleRoutes'));
 app.use('/api/problems', require('./routes/ProblemRoute.js'));
 app.use('/api/submissions', require('./routes/submissionRoutes'));
 app.use('/api/users', require('./routes/userRouter'))
+app.use("/api",require('./routes/runRoutes'));
 app.get('/', (req, res) => {
   res.send('Online Judge Backend is running');
 });

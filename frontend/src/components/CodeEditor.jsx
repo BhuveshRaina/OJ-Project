@@ -1,96 +1,99 @@
-import React, { useState, useEffect } from 'react';
-import Editor from '@monaco-editor/react';
+import React from "react";
+import { Editor } from "@monaco-editor/react";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Code2, Play, Send } from "lucide-react";
 
-const CodeEditor = ({ language, value, onChange }) => {
-  const [code, setCode] = useState('');
-
-  // Boilerplates keyed by language
-  const boilerplateCode = {
-    cpp: `/**
- * Definition for singly-linked list.
- * struct ListNode {
- *     int val;
- *     ListNode *next;
- *     ListNode() : val(0), next(nullptr) {}
- *     ListNode(int x) : val(x), next(nullptr) {}
- *     ListNode(int x, ListNode *next) : val(x), next(next) {}
- * };
- */
-class Solution {
-public:
-    ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
-        
-    }
-};`,
-    java: `/**
- * Definition for singly-linked list.
- * public class ListNode {
- *     int val;
- *     ListNode next;
- *     ListNode() {}
- *     ListNode(int val) { this.val = val; }
- *     ListNode(int val, ListNode next) { this.val = val; this.next = next; }
- * }
- */
-class Solution {
-    public ListNode addTwoNumbers(ListNode l1, ListNode l2) {
-        
-    }
-}`,
-    python: `# Definition for singly-linked list.
-# class ListNode:
-#     def __init__(self, val=0, next=None):
-#         self.val = val
-#         self.next = next
-class Solution:
-    def addTwoNumbers(self, l1, l2):
-        `
-  };
-
-  // Map to Monaco's language ids (could alias if you add more languages)
-  const languageMap = {
-    cpp: 'cpp',
-    java: 'java',
-    python: 'python'
-  };
-
-  /* Whenever the chosen language changes, preload its template
-     and propagate the change upward. */
-  useEffect(() => {
-    const newCode = boilerplateCode[language] || '';
-    setCode(newCode);
-    onChange(newCode);
-  }, [language, onChange]);
-
-  // Keep local state in sync with the editor’s content
-  const handleCodeChange = (newValue = '') => {
-    setCode(newValue);
-    onChange(newValue);
-  };
+const CodeEditor = ({
+  language,
+  code,
+  onCodeChange,
+  onLanguageChange,
+  running,
+  submitting,
+  onRun,
+  onSubmit,
+}) => {
+  const languages = [
+    { value: "cpp",    label: "C++"     },
+    { value: "python", label: "Python"  },
+    { value: "java",   label: "Java"    },
+  ];
 
   return (
-    <div className="h-full bg-dark-bg">
-      <Editor
-        height="100%"
-        language={languageMap[language]}
-        value={code}
-        onChange={handleCodeChange}
-        theme="vs-dark"
-        options={{
-          fontSize: 14,
-          fontFamily: 'JetBrains Mono, Fira Code, monospace',
-          lineNumbers: 'on',
-          minimap: { enabled: false },
-          scrollBeyondLastLine: false,
-          automaticLayout: true,
-          tabSize: 4,
-          insertSpaces: true,
-          wordWrap: 'on',
-          bracketPairColorization: { enabled: true },
-          cursorStyle: 'line',
-          renderLineHighlight: 'line'
-        }}
-      />
+    <div className="h-full bg-[#0f1419] flex flex-col">
+      {/* header */}
+      <div className="flex items-center justify-between p-4 border-b border-[#1e2328] bg-[#0f1419]">
+        <div className="flex items-center gap-3">
+          <Code2 className="h-5 w-5 text-blue-400" />
+          <span className="font-medium text-gray-200">Code Editor</span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* language select */}
+          <Select value={language} onValueChange={onLanguageChange}>
+            <SelectTrigger className="w-28 bg-[#1e2328] border-[#2a2f36] text-gray-200 hover:bg-[#2a2f36] gap-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-[#1e2328] border-[#2a2f36] z-50">
+              {languages.map((l) => (
+                <SelectItem
+                  key={l.value}
+                  value={l.value}
+                  className="text-gray-200 focus:bg-[#2a2f36] hover:bg-[#2a2f36]"
+                >
+                  {l.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* run */}
+          <Button
+            onClick={onRun}
+            variant="outline"
+            size="sm"
+            disabled={running || submitting}
+            className="bg-[#1e2328] border-[#2a2f36] text-gray-200 hover:bg-[#2a2f36]"
+          >
+            <Play className="h-4 w-4 mr-2" />
+            {running ? "Running…" : "Run"}
+          </Button>
+
+          {/* submit */}
+          <Button
+            onClick={onSubmit}
+            size="sm"
+            disabled={running || submitting}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            <Send className="h-4 w-4 mr-2" />
+            {submitting ? "Submitting…" : "Submit"}
+          </Button>
+        </div>
+      </div>
+
+      {/* monaco editor */}
+      <div className="flex-1 overflow-hidden">
+        <Editor
+          height="100%"
+          language={language}
+          value={code}
+          onChange={(v) => onCodeChange(v || "")}
+          theme="vs-dark"
+          options={{
+            minimap: { enabled: false },
+            fontSize: 14,
+            scrollBeyondLastLine: false,
+            automaticLayout: true,
+            wordWrap: "on",
+            tabSize: 2,
+            insertSpaces: true,
+          }}
+        />
+      </div>
     </div>
   );
 };

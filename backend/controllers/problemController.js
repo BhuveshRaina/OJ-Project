@@ -269,3 +269,45 @@ exports.getHotProblems = async (req, res) => {
     return res.status(500).json({ success: false, error: "Server error" });
   }
 };
+
+exports.getProblemMetaAndSampleByNumber = async (req, res) => {
+  try {
+    const num = parseInt(req.params.number, 10);
+
+    const problem = await Problem.findOne({ problemNumber: num })
+      .select('problemNumber title statement constraints difficulty tags createdBy createdAt')
+      .lean();
+    if (!problem) {
+      return res.status(404).json({ success: false, error: 'Problem not found' });
+    }
+
+    let sample;
+    try {
+      sample = await getTestCasesFromS3(String(problem._id), 'sampleTestCases.json');
+    } catch (err) {
+      console.error('S3 fetch error:', err);
+      return res.status(500).json({
+        success: false,
+        error: 'Could not load sample test cases'
+      });
+    }
+
+    return res.json({
+      success: true,
+      problem: {
+        problemNumber:      problem.problemNumber,
+        title:       problem.title,
+        statement:   problem.statement,
+        constraints: problem.constraints,
+        difficulty:  problem.difficulty,
+        tags:        problem.tags,
+        createdBy:   problem.createdBy,
+        createdAt:   problem.createdAt,
+      },
+      sampleTestCases: sample
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, error: 'Server error' });
+  }
+};
