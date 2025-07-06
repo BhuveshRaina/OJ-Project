@@ -1,53 +1,96 @@
 const Submission = require('../models/submission');
-const  {getTestCasesFromS3}  = require('../utils/s3Fetcher');
-const {submissionQueue} = require('../config/redisConfig');
-const { required } = require('joi');
+const  { getTestCasesFromS3 }  = require('../utils/s3Fetcher');
+const { submissionQueue } = require('../config/redisConfig');
+const Problem             = require('../models/problem'); 
 
 exports.createSubmission = async (req, res) => {
   try {
-    const { problemId, code, language, problemName } = req.body;
-    if (!problemId || !code || !language || !problemName) {
+    const { problemId, code, language } = req.body;
+
+    if (problemId === undefined || problemId === null || !code || !language) {
       return res.status(400).json({
-        success: false,
-        message: 'Missing required fields: problemId, code, language, or problemName'
+        success : false,
+        message : 'Missing required fields: problemId, code, or language',
+      });
+    }
+    if (!Number.isInteger(problemId)) {
+      return res.status(400).json({
+        success : false,
+        message : 'problemId must be an integer (problem number)',
       });
     }
 
-    const submission = new Submission({
-      userId: req.user.id,
-      problemId,
+   
+    const problemDoc = await Problem
+      .findOne({ problemNumber: problemId })
+      .select('_id')
+      .lean();
+
+    if (!problemDoc) {
+      return res.status(404).json({
+        success : false,
+        message : `Problem with number ${problemId} not found`,
+      });
+    }
+
+    const problemMongoIdStr = problemDoc._id.toString(); 
+
+    const submission = await Submission.create({
+      userId        : req.user.id,
+      problemNumber : problemId,          
+      problemId     : problemDoc._id,    
       code,
       language,
-      verdict: 'Pending',
-      startedAt: new Date()
+      verdict       : 'Pending',
+      startedAt     : new Date(),
     });
 
-    await submission.save();
+    const testcases = await getTestCasesFromS3(problemMongoIdStr,"hiddenTestCases.json");
 
-    const testCases = await getTestCasesFromS3(problemName);
+    await submissionQueue.add(
+      {
+        submissionId : submission._id.toString(), 
+        code,
+        language,
+        testcases,
+        limits       : { time: 2000, memory: 256 }, 
+      },
+    );
 
-    await submissionQueue.add({
-      submissionId: submission._id,
-      code,
-      language,
-      testcases: testCases,
-      limits: { time: 2000, memory: 256 }
-    }, {
-      attempts: 2,
-      backoff: 3000
-    });
-
-    res.status(201).json({
-      message: 'Submission received and sent for execution',
-      submissionId: submission._id,
-      success: true
+    return res.status(201).json({
+      success      : true,
+      message      : 'Submission received and queued for execution',
+      submissionId : submission._id,
     });
 
   } catch (err) {
-    console.error('Error during submission:', err);
-    res.status(500).json({
-      success: false,
-      message: 'Server error during submission. Please try again.'
+    console.error('[createSubmission]', err);
+    return res.status(500).json({
+      success : false,
+      message : 'Server error during submission. Please try again.',
     });
+  }
+};
+
+exports.getSubmissionStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const submission = await Submission.findById(id).lean();
+
+    if (!submission)
+      return res.status(404).json({ success: false, message: 'Submission not found' });
+
+    if (submission.userId.toString() !== req.user.id.toString())
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+
+    return res.json({
+      success        : true,
+      verdict        : submission.verdict,         
+      errorMessage   : submission.errorMessage || submission.error || '',
+      failedTestCase : submission.failedTestCase || null, 
+    });
+  } catch (err) {
+    console.error('[getSubmissionStatus]', err);
+    return res.status(500).json({ success: false, message: 'Could not fetch submission' });
   }
 };

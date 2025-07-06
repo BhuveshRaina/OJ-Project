@@ -15,30 +15,31 @@ export default function RunPage() {
   const { id } = useParams();
   const { toast } = useToast();
 
-  /* ──────────────── problem + boilerplate ──────────────── */
+  /* ─────────── problem + boilerplate ─────────── */
   const [problem, setProblem]             = useState(null);
   const [sampleTestCases, setSampleCases] = useState([]);
   const [loading, setLoading]             = useState(true);
 
-  const [userCases, setUserCases]         = useState([]);
-  const [selectedLang, setSelectedLang]   = useState("cpp");
-  const [code, setCode]                   = useState(getBoilerplate("cpp"));
+  const [userCases, setUserCases]   = useState([]);
+  const [selectedLang, setSelected] = useState("cpp");
+  const [code, setCode]             = useState(getBoilerplate("cpp"));
 
-  /* ──────────────── run (sample tests) ──────────────── */
-  const [running, setRunning]             = useState(false);
-  const [runId, setRunId]                 = useState(null);
-  const [outputs, setOutputs]             = useState([]);
-  const [compileErrRun, setCompileErrRun] = useState(null);     // compile error during Run
+  /* ─────────── RUN (custom tests) ─────────── */
+  const [running, setRunning]       = useState(false);
+  const [runId, setRunId]           = useState(null);
+  const [outputs, setOutputs]       = useState([]);     // ONLY for Run
+  const [compileErrRun, setCERun]   = useState(null);
   const runPollRef = useRef(null);
 
-  /* ──────────────── submit (hidden tests) ──────────────── */
+  /* ─────────── SUBMIT (hidden tests) ─────────── */
   const [submitting, setSubmitting]       = useState(false);
   const [submissionId, setSubmissionId]   = useState(null);
-  const [verdict, setVerdict]             = useState(null);     // Accepted / WA / etc.
-  const [compileErrSubm, setCompileErrSubm] = useState(null);   // compile error during Submit
+  const [verdict, setVerdict]             = useState(null);
+  const [submissionError, setSubmError]   = useState(null);  // CE / TLE / MLE msg
+  const [failedCase, setFailedCase]       = useState(null);  // Wrong-Answer case
   const submPollRef = useRef(null);
 
-  /* ──────────────── load problem on mount ──────────────── */
+  /* ────── load problem & sample cases ────── */
   useEffect(() => {
     (async () => {
       try {
@@ -61,7 +62,6 @@ export default function RunPage() {
     })();
   }, [id, toast]);
 
-  /* ──────────────── initialise sample cases ──────────────── */
   useEffect(() => {
     if (sampleTestCases.length) {
       setUserCases(sampleTestCases.map(tc => ({
@@ -71,13 +71,26 @@ export default function RunPage() {
     }
   }, [sampleTestCases]);
 
-  /* ──────────────── helpers ──────────────── */
+  /* ────── helpers ────── */
   function getBoilerplate(lang) {
     switch (lang) {
       case "cpp":
-        return `#include <bits/stdc++.h>\nusing namespace std;\nint main(){\n  cout << "Hello";\n  return 0;\n}`;
+        return (
+`#include <iostream>
+using namespace std;
+int main(){
+    cout << "Hello";
+    return 0;
+}`
+        );
       case "java":
-        return `public class Main {\n  public static void main(String[] args){\n    System.out.println("Hello");\n  }\n}`;
+        return (
+`public class Main{
+  public static void main(String[] a){
+    System.out.println("Hello");
+  }
+}`
+        );
       case "python":
         return `print("Hello")`;
       default:
@@ -86,16 +99,21 @@ export default function RunPage() {
   }
 
   const handleLanguageChange = (lang) => {
-    setSelectedLang(lang);
+    setSelected(lang);
     setCode(getBoilerplate(lang));
   };
 
+  /* ─────────── RUN handler ─────────── */
   const handleRun = async () => {
     if (!problem) return;
 
+
+    setVerdict(null);
+    setSubmError(null);
+    setFailedCase(null);
     setRunning(true);
-    setOutputs([]);
-    setCompileErrRun(null);
+    setOutputs([]);            
+    setCERun(null);
 
     try {
       const payload = {
@@ -104,7 +122,9 @@ export default function RunPage() {
         language: selectedLang,
         testCases: userCases.map(tc => ({ input: tc.input })),
       };
-      const { data } = await axios.post("http://localhost:8000/api/run", payload, { withCredentials: true });
+      const { data } = await axios.post("http://localhost:8000/api/run", payload, {
+        withCredentials: true,
+      });
       setRunId(data.runId);
     } catch (err) {
       console.error(err);
@@ -113,21 +133,25 @@ export default function RunPage() {
     }
   };
 
+  /* ─────────── RUN polling ─────────── */
   useEffect(() => {
     if (!runId) return;
     const start = Date.now();
 
     runPollRef.current = setInterval(async () => {
       const elapsed = Date.now() - start;
-      if (elapsed > 10_000) {         
+      if (elapsed > 10_000) {
         clearInterval(runPollRef.current);
         setRunning(false);
-        toast({ title: "Timeout", description: "Run timed out, please try again", variant: "destructive" });
+        toast({ title: "Timeout", description: "Run timed out", variant: "destructive" });
         return;
       }
 
       try {
-        const { data } = await axios.get(`http://localhost:8000/api/run/${runId}`, { withCredentials: true });
+        const { data } = await axios.get(`http://localhost:8000/api/run/${runId}`, {
+          withCredentials: true,
+        });
+
         setOutputs((data.outputs || []).map(o => o.output));
 
         if (data.verdict !== "pending") {
@@ -136,8 +160,7 @@ export default function RunPage() {
 
           if (data.verdict === "Compilation Error") {
             const msg = data.error || "Compilation Error";
-            setCompileErrRun(msg);
-            setOutputs(Array(userCases.length).fill(msg));
+            setCERun(msg);                               // show in Output panel
             toast({ title: "Compilation Error", description: msg, variant: "destructive" });
           } else if (data.verdict !== "done") {
             toast({ title: data.verdict, description: data.error || "", variant: "destructive" });
@@ -153,21 +176,24 @@ export default function RunPage() {
     return () => clearInterval(runPollRef.current);
   }, [runId, userCases.length, toast]);
 
-  /* ──────────────── SUBMIT handler ──────────────── */
+  /* ─────────── SUBMIT handler ─────────── */
   const handleSubmit = async () => {
     if (!problem) return;
 
+    /* reset submission-time UI state */
     setSubmitting(true);
     setVerdict(null);
-    setCompileErrSubm(null);
-
+    setSubmError(null);
+    setFailedCase(null);
+    setOutputs([]);     
+    setCERun(null);
     try {
-      const payload = {
-        problemNumber: problem.problemNumber,
-        code,
-        language: selectedLang,
-      };
-      const { data } = await axios.post("http://localhost:8000/api/submit", payload, { withCredentials: true });
+      const payload = { problemId: problem.problemNumber, code, language: selectedLang };
+      const { data } = await axios.post(
+        "http://localhost:8000/api/submissions/submit",
+        payload,
+        { withCredentials: true }
+      );
       setSubmissionId(data.submissionId);
     } catch (err) {
       console.error(err);
@@ -176,14 +202,14 @@ export default function RunPage() {
     }
   };
 
-  /* ──────────────── SUBMIT polling (10 s) ──────────────── */
+  /* ─────────── SUBMIT polling ─────────── */
   useEffect(() => {
     if (!submissionId) return;
     const start = Date.now();
 
     submPollRef.current = setInterval(async () => {
       const elapsed = Date.now() - start;
-      if (elapsed > 10_000) {          // 10-s timeout for judging
+      if (elapsed > 10_000) {
         clearInterval(submPollRef.current);
         setSubmitting(false);
         toast({ title: "Timeout", description: "Judging took too long", variant: "destructive" });
@@ -192,26 +218,41 @@ export default function RunPage() {
 
       try {
         const { data } = await axios.get(
-          `http://localhost:8000/api/submit/${submissionId}`,
+          `http://localhost:8000/api/submissions/submit/${submissionId}`,
           { withCredentials: true }
         );
 
-        if (data.verdict === "pending") return;
+        if (data.verdict === "pending" || data.verdict === "Pending") return;
 
         clearInterval(submPollRef.current);
         setSubmitting(false);
         setVerdict(data.verdict);
 
-        if (data.verdict === "Compilation Error") {
-          const msg = data.error || "Compilation Error";
-          setCompileErrSubm(msg);
-          /* For consistency, mirror into outputs too */
-          setOutputs(Array(userCases.length).fill(msg));
-          toast({ title: "Compilation Error", description: msg, variant: "destructive" });
-        } else if (data.verdict !== "Accepted") {
-          toast({ title: data.verdict, description: data.error || "", variant: "destructive" });
-        } else {
-          toast({ title: "Accepted 🎉", description: "All hidden tests passed!" });
+        switch (data.verdict) {
+          case "Accepted":
+            toast({ title: "Accepted ✔️", description: "All hidden tests passed!" });
+            break;
+
+          case "Compilation Error":
+            setSubmError(data.errorMessage || data.error || "Compilation Error");
+            toast({ title: "Compilation Error", description: data.errorMessage || data.error, variant: "destructive" });
+            break;
+
+          case "Wrong Answer":
+            setSubmError("Wrong Answer");
+            setFailedCase(data.failedTestCase);
+            toast({ title: "Wrong Answer", description: "See failing test case", variant: "destructive" });
+            break;
+
+          case "Time Limit Exceeded":
+          case "Memory Limit Exceeded":
+          case "Runtime Error":
+            setSubmError(data.verdict);
+            toast({ title: data.verdict, variant: "destructive" });
+            break;
+
+          default:
+            toast({ title: data.verdict });
         }
       } catch (err) {
         console.error(err);
@@ -221,27 +262,26 @@ export default function RunPage() {
     }, 1000);
 
     return () => clearInterval(submPollRef.current);
-  }, [submissionId, userCases.length, toast]);
+  }, [submissionId, toast]);
 
-  /* ──────────────── guards ──────────────── */
+  /* ─────────── guards ─────────── */
   if (loading)  return <div className="p-6 text-gray-400">Loading…</div>;
   if (!problem) return <div className="p-6 text-red-400">Problem not found</div>;
 
-  /* ──────────────── render ──────────────── */
+  /* ─────────── render ─────────── */
   return (
     <div className="h-screen bg-[#0f1419] text-gray-100 overflow-hidden">
       <ResizablePanelGroup direction="horizontal" className="h-full">
-        {/* description */}
+
         <ResizablePanel defaultSize={45} minSize={30}>
           <ProblemDescription problem={problem} sampleTestCases={sampleTestCases} />
         </ResizablePanel>
 
-        <ResizableHandle className="w-2 bg-[#1e2328] hover:bg-[#2a2f36] transition-colors" />
+        <ResizableHandle className="w-2 bg-[#1e2328]" />
 
-        {/* editor + test cases */}
         <ResizablePanel defaultSize={55} minSize={40}>
           <ResizablePanelGroup direction="vertical" className="h-full">
-            {/* code editor */}
+
             <ResizablePanel defaultSize={70} minSize={40}>
               <CodeEditor
                 language={selectedLang}
@@ -255,19 +295,21 @@ export default function RunPage() {
               />
             </ResizablePanel>
 
-            <ResizableHandle className="h-2 bg-[#1e2328] hover:bg-[#2a2f36] transition-colors" />
+            <ResizableHandle className="h-2 bg-[#1e2328]" />
 
-            {/* test cases */}
             <ResizablePanel defaultSize={30} minSize={20}>
               <TestCases
                 testCases={userCases}
                 setTestCases={setUserCases}
                 running={running}
                 outputs={outputs}
-                compileError={compileErrRun || compileErrSubm}
+                runCompileError={compileErrRun}
                 verdict={verdict}
+                submissionError={submissionError}
+                failedCase={failedCase}
               />
             </ResizablePanel>
+
           </ResizablePanelGroup>
         </ResizablePanel>
       </ResizablePanelGroup>

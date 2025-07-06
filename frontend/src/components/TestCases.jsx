@@ -9,55 +9,56 @@ export default function TestCases({
   testCases,
   setTestCases,
   running,
-  outputs = [],
-  compileError = null,
-  verdict = null,              // NEW
+  outputs = [],            
+  runCompileError = null,  
+  verdict = null,          
+  submissionError = null, 
+  failedCase = null,      
 }) {
   const [activeTab, setActiveTab] = useState("testcase");
   const [selectedIdx, setSelectedIdx] = useState(0);
 
-  /* auto-switch to result when verdict arrives */
+    useEffect(() => {
+      if (running) setActiveTab("testcase");
+    }, [running]);
+
+  /* auto-switch after submit */
   useEffect(() => {
     if (verdict) setActiveTab("result");
   }, [verdict]);
 
-  /* helpers */
-  const addNew = () => {
+  /* helpers for custom tests */
+  const addCase = () => {
     if (testCases.length >= 5) return;
     setTestCases([...testCases, { input: "", expectedOutput: "" }]);
     setSelectedIdx(testCases.length);
   };
-
-  const del = (idx) => {
+  const delCase = (idx) => {
     if (testCases.length <= 1) return;
-    const upd = testCases.filter((_, i) => i !== idx);
-    setTestCases(upd);
-    setSelectedIdx(Math.min(idx, upd.length - 1));
+    const next = testCases.filter((_, i) => i !== idx);
+    setTestCases(next);
+    setSelectedIdx(Math.min(idx, next.length - 1));
+  };
+  const updateInput = (idx, val) => {
+    const next = [...testCases];
+    next[idx] = { ...next[idx], input: val };
+    setTestCases(next);
   };
 
-  const updInput = (idx, val) => {
-    const upd = [...testCases];
-    upd[idx] = { ...upd[idx], input: val };
-    setTestCases(upd);
-  };
-
-  /* render */
+  /* ─────────── UI ─────────── */
   return (
     <div className="h-full bg-[#0f1419] border-t border-[#1e2328]">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-        {/* top bar */}
+
+        {/* header */}
         <div className="flex items-center justify-between p-4 border-b border-[#1e2328]">
           <TabsList className="bg-[#1e2328] border-[#2a2f36]">
-            <TabsTrigger value="testcase" className="text-gray-300 data-[state=active]:bg-[#2a2f36]">
-              Testcase
-            </TabsTrigger>
-            <TabsTrigger value="result" className="text-gray-300 data-[state=active]:bg-[#2a2f36]">
-              Test Result
-            </TabsTrigger>
+            <TabsTrigger value="testcase">Testcase</TabsTrigger>
+            <TabsTrigger value="result">Test Result</TabsTrigger>
           </TabsList>
         </div>
 
-        {/* TESTCASE tab */}
+        {/* ───── TESTCASE (Run) ───── */}
         <TabsContent value="testcase" className="flex-1 p-0 overflow-hidden">
           <ScrollArea className="h-full">
             {/* buttons */}
@@ -68,29 +69,25 @@ export default function TestCases({
                     variant={selectedIdx === idx ? "default" : "outline"}
                     size="sm"
                     onClick={() => setSelectedIdx(idx)}
-                    className={selectedIdx === idx
-                      ? "bg-blue-600 hover:bg-blue-700 text-white"
-                      : "bg-[#1e2328] border-[#2a2f36] text-gray-300 hover:bg-[#2a2f36]"}
-                  >
+                    className={
+                      selectedIdx === idx
+                        ? "bg-blue-600 hover:bg-blue-700 text-white"
+                        : "bg-[#1e2328] border-[#2a2f36] text-gray-300 hover:bg-[#2a2f36]"
+                    }>
                     Case {idx + 1}
                   </Button>
                   {testCases.length > 1 && (
                     <button
-                      onClick={(e) => { e.stopPropagation(); del(idx); }}
-                      className="absolute -top-1 -left-1 w-3 h-3 bg-[#1e2328] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border border-[#2a2f36]"
-                    >
+                      onClick={(e) => { e.stopPropagation(); delCase(idx); }}
+                      className="absolute -top-1 -left-1 w-3 h-3 bg-[#1e2328] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border border-[#2a2f36]">
                       <X className="w-1.5 h-1.5 text-gray-400" />
                     </button>
                   )}
                 </div>
               ))}
               {testCases.length < 5 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={addNew}
-                  className="bg-[#1e2328] border-[#2a2f36] text-gray-300 hover:bg-[#2a2f36]"
-                >
+                <Button variant="outline" size="sm" onClick={addCase}
+                        className="bg-[#1e2328] border-[#2a2f36] text-gray-300 hover:bg-[#2a2f36]">
                   +
                 </Button>
               )}
@@ -101,7 +98,7 @@ export default function TestCases({
               <h4 className="text-sm font-medium text-gray-300 mb-2">Input</h4>
               <Textarea
                 value={testCases[selectedIdx]?.input || ""}
-                onChange={e => updInput(selectedIdx, e.target.value)}
+                onChange={e => updateInput(selectedIdx, e.target.value)}
                 className="bg-[#1e2328]/50 border-[#2a2f36] text-gray-100 font-mono text-sm min-h-[80px] resize-none"
               />
             </div>
@@ -115,8 +112,10 @@ export default function TestCases({
                   <h4 className="text-sm font-medium text-gray-300 mb-2">Output</h4>
                   <div className="bg-[#1e2328]/50 rounded p-3 border border-[#2a2f36] min-h-[80px]">
                     <pre className="text-sm text-gray-100 font-mono whitespace-pre-wrap">
-                      {compileError ?? outputs[selectedIdx] ?? (
-                        <span className="text-gray-500 italic">No output yet.</span>
+                      {runCompileError ?? outputs[selectedIdx] ?? (
+                        <span className="text-gray-500 italic">
+                          No output yet. Run your code to see results.
+                        </span>
                       )}
                     </pre>
                   </div>
@@ -126,25 +125,37 @@ export default function TestCases({
           </ScrollArea>
         </TabsContent>
 
-        {/* RESULT tab */}
-        <TabsContent value="result" className="flex-1 p-6 overflow-auto">
-          {verdict ? (
-            <div
-              className={
-                verdict === "Accepted"
-                  ? "text-green-400 text-lg font-semibold"
-                  : "text-red-400 text-lg font-semibold"
-              }
-            >
-              {verdict}
-              {compileError && verdict === "Compilation Error" && (
-                <pre className="mt-2 text-sm whitespace-pre-wrap text-gray-200">
-                  {compileError}
-                </pre>
+        {/* ───── RESULT (Submit) ───── */}
+        <TabsContent value="result" className="flex-1 overflow-auto p-6">
+          {!verdict ? (
+            <div className="text-gray-400">Submit code to see verdict.</div>
+          ) : verdict === "Accepted" ? (
+            <div className="text-green-500 text-lg font-semibold">Accepted</div>
+          ) : (
+            <div className="text-red-500 space-y-4">
+              {/* headline */}
+              <h3 className="font-semibold">{verdict}</h3>
+
+              {/* failing testcase details (if present) */}
+              {failedCase && (
+                <>
+                  <div>
+                    <span className="font-medium text-gray-300">Input:</span>
+                    <pre className="whitespace-pre-wrap text-sm text-gray-200">{failedCase.input}</pre>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-300">Expected:</span>
+                    <pre className="whitespace-pre-wrap text-sm text-gray-200">{failedCase.expectedOutput}</pre>
+                  </div>
+                  {failedCase.actualOutput && (
+                    <div>
+                      <span className="font-medium text-gray-300">Your Output:</span>
+                      <pre className="whitespace-pre-wrap text-sm text-gray-200">{failedCase.actualOutput}</pre>
+                    </div>
+                  )}
+                </>
               )}
             </div>
-          ) : (
-            <div className="text-gray-400">Submit code to see verdict.</div>
           )}
         </TabsContent>
       </Tabs>
