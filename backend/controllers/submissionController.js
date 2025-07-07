@@ -94,3 +94,56 @@ exports.getSubmissionStatus = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Could not fetch submission' });
   }
 };
+
+exports.getRecentSubmissions = async (req, res) => {
+  try {
+    const page  = Math.max(1, parseInt(req.query.page)  || 1)
+    const limit = Math.max(1, parseInt(req.query.limit) || 5)
+    const skip  = (page - 1) * limit
+    const userId = req.user.id
+
+    const totalCount = await Submission.countDocuments({ userId })
+
+    const subs = await Submission.find({ userId })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate('problemId', 'title difficulty')
+      .lean()
+
+    const submissions = subs.map(s => ({
+      id:           s._id,
+      problemTitle: s.problemId.title,
+      problemNumber : String(s.problemNumber),
+      difficulty:   s.problemId.difficulty,
+      language:     s.language,
+      runtime:      s.totalTimeMs != null ? `${s.totalTimeMs} ms` : null,
+      memory:       s.totalMemoryKb != null ? `${s.totalMemoryKb} KB` : null,
+      verdict:      s.verdict,
+      submittedAt:  s.createdAt,
+      code:         s.code
+    }))
+
+    return res.json({
+      success:      true,
+      page,
+      totalPages:   Math.ceil(totalCount / limit),
+      totalCount,
+      submissions
+    })
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: 'Server error fetching recent submissions'
+    })
+  }
+}
+
+
+
+
+
+
+
+
+

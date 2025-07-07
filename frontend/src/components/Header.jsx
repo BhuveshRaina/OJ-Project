@@ -47,7 +47,7 @@ const Header = () => {
   };
 
   return (
-    <header className="w-full border-b border-gray-700 bg-dark-bg/95 backdrop-blur supports-[backdrop-filter]:bg-dark-bg/80 shadow-sm">
+    <header className="w-full border-b border-gray-700  backdrop-blur bg-dark-card/80 shadow-sm">
       <div className="container flex h-16 items-center justify-between">
 
         {/* ───────── Logo ───────── */}

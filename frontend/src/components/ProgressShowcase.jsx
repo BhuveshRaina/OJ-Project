@@ -5,107 +5,137 @@ import { Card } from '@/components/ui/card'
 import CircularProgress from './CircularProgress'
 import { getProfile } from '@/store/authSlice'
 
-const ProgressShowcase = () => {
+export default function ProgressShowcase() {
   const dispatch = useDispatch()
   const { user, status } = useSelector((state) => state.auth)
 
   const [platformStats, setPlatformStats] = useState({
-    total: 0,
-    easy:  0,
-    medium:0,
-    hard:  0
+    Easy:   0,
+    Medium: 0,
+    Hard:   0,
+    total:  0,
   })
 
-  // load current user if not already loaded
+  const [userStats, setUserStats] = useState({
+    easy:   0,
+    medium: 0,
+    hard:   0,
+    total:  0,
+  })
+
+  // load profile
   useEffect(() => {
-    if (status === 'idle') {
-      dispatch(getProfile())
-    }
+    if (status === 'idle') dispatch(getProfile())
   }, [dispatch, status])
 
-  // fetch platform-wide question counts
+  // fetch platform totals
   useEffect(() => {
-  const fetchPlatformStats = async () => {
-    try {
-      const { data } = await axios.get(
-        "http://localhost:8000/api/problems/summary",
-        { withCredentials: true }
-      );
-      if (data.success) setPlatformStats(data.stats);
-    } catch (err) {
-      console.error("Failed to fetch platform stats:", err);
+    async function fetchPlatform() {
+      try {
+        const { data } = await axios.get(
+          'http://localhost:8000/api/problems/summary',
+          { withCredentials: true }
+        )
+        if (data.success) setPlatformStats(data.stats)
+      } catch (err) {
+        console.error('Failed to fetch platform stats:', err)
+      }
     }
-  };
-  fetchPlatformStats();
-}, []);
+    fetchPlatform()
+  }, [])
 
+  // fetch user stats
+  useEffect(() => {
+    if (!user?._id) return
+    async function fetchUser() {
+      try {
+        const { data } = await axios.get(
+          `http://localhost:8000/api/users/${user._id}/stats`,
+          { withCredentials: true }
+        )
+        if (data.success) setUserStats(data.stats)
+      } catch (err) {
+        console.error('Failed to fetch user stats:', err)
+      }
+    }
+    fetchUser()
+  }, [user?._id])
 
-  if (status === 'loading' || !user) {
-    return null
-  }
+  if (status === 'loading' || !user) return null
 
-  const { solvedTotal, solvedEasy, solvedMedium, solvedHard } = user
-  const { total, Easy, Medium, Hard } = platformStats
-  console.log(platformStats)
+  // helper to compute percentage with its own denom
+  const pct = (num, denom) =>
+    denom > 0 ? ((num / denom) * 100).toFixed(1) : '0.0'
+
+  // destructure
+  const { total: pTotal, Easy, Medium, Hard } = platformStats
+  const { total: uTotal, easy: uEasy, medium: uMed, hard: uHard } = userStats
+
+  // overall uses the overall total
+  const overallPct = pct(uTotal, pTotal)
+  // per-difficulty uses its own difficulty total
+  const easyPct  = pct(uEasy, Easy)
+  const medPct   = pct(uMed, Medium)
+  const hardPct  = pct(uHard, Hard)
+
   return (
     <div className="flex justify-center w-full">
       <Card className="bg-dark-card border-gray-700 w-full pb-3 pt-2">
+        {/* overall circular */}
         <div className="flex justify-center mb-6">
           <CircularProgress
-            solved={solvedTotal}
-            total={total}
+            solved={uTotal}
+            total={pTotal}
             attempting={0}
             size={200}
             strokeWidth={10}
           />
         </div>
 
+        {/* breakdown bars */}
         <div className="mt-6 grid grid-cols-3 gap-4 text-center w-[90%] mx-auto">
           {/* Easy */}
           <div className="bg-gray-800 border border-gray-700 rounded-lg p-3">
             <div className="text-green-500 font-semibold mb-2">Easy</div>
-            <span className="text-white text-lg mb-2">{solvedEasy}</span>
-            <span className='text-lg text-white'>/{Easy}</span>
+            <div className="text-white text-lg mb-2">{uEasy}/{Easy}</div>
             <div className="w-full bg-gray-700 rounded-full h-2">
               <div
-                className="bg-green-600 h-2 rounded-full transition-all duration-500"
-                style={{ width: total ? `${(solvedEasy / total) * 100}%` : '0%' }}
+                className="bg-green-500 h-2 rounded-full transition-all duration-500"
+                style={{ width: Easy > 0 ? `${easyPct}%` : '0%' }}
               />
             </div>
             <div className="text-xs text-gray-400 mt-1">
-              {total ? ((solvedEasy / total) * 100).toFixed(1) : '0.0'}%
+              {easyPct}%
             </div>
           </div>
 
           {/* Medium */}
           <div className="bg-gray-800 border border-gray-700 rounded-lg p-3">
             <div className="text-yellow-500 font-semibold mb-2">Medium</div>
-            <span className="text-white text-lg mb-2">{solvedMedium}</span>
-            <span className='text-lg text-white'>/{Medium}</span>
+            <div className="text-white text-lg mb-2">{uMed}/{Medium}</div>
             <div className="w-full bg-gray-700 rounded-full h-2">
               <div
                 className="bg-yellow-500 h-2 rounded-full transition-all duration-500"
-                style={{ width: total ? `${(solvedMedium / total) * 100}%` : '0%' }}
+                style={{ width: Medium > 0 ? `${medPct}%` : '0%' }}
               />
             </div>
             <div className="text-xs text-gray-400 mt-1">
-              {total ? ((solvedMedium / total) * 100).toFixed(1) : '0.0'}%
+              {medPct}%
             </div>
           </div>
 
           {/* Hard */}
           <div className="bg-gray-800 border border-gray-700 rounded-lg p-3">
             <div className="text-red-600 font-semibold mb-2">Hard</div>
-            <span className="text-white text-lg mb-2">{solvedHard}</span>
-             <span className='text-lg text-white'>/{Hard}</span>
+            <div className="text-white text-lg mb-2">{uHard}/{Hard}</div>
             <div className="w-full bg-gray-700 rounded-full h-2">
               <div
                 className="bg-red-600 h-2 rounded-full transition-all duration-500"
-                style={{ width: total ? `${(solvedHard / total) * 100}%` : '0%' }}
+                style={{ width: Hard > 0 ? `${hardPct}%` : '0%' }}
               />
             </div>
             <div className="text-xs text-gray-400 mt-1">
-              {total ? ((solvedHard / total) * 100).toFixed(1) : '0.0'}%
+              {hardPct}%
             </div>
           </div>
         </div>
@@ -113,5 +143,3 @@ const ProgressShowcase = () => {
     </div>
   )
 }
-
-export default ProgressShowcase

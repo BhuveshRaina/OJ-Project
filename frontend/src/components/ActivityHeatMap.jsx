@@ -44,9 +44,9 @@ const ActivityHeatmap = ({ data = [], year: initialYear = new Date().getFullYear
   // intensity based on count
   const getIntensity = (c) => {
     if (!c) return 'bg-gray-800 border-gray-700'
-    if (c <= 2) return 'bg-green-900 border-green-800'
-    if (c <= 5) return 'bg-green-700 border-green-600'
-    if (c <= 10) return 'bg-green-500 border-green-400'
+    if (c <= 1) return 'bg-green-900 border-green-800'
+    if (c <= 2) return 'bg-green-700 border-green-600'
+    if (c <= 3) return 'bg-green-500 border-green-400'
     return 'bg-green-300 border-green-200'
   }
 

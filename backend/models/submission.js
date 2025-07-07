@@ -1,8 +1,10 @@
+const { required } = require("joi")
 const mongoose = require("mongoose")
 
 const SubmissionSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   problemId: { type: mongoose.Schema.Types.ObjectId, ref: "Problem" },
+  problemNumber : {type : String , required : true},
   code: { type: String, required: true },
   language: {
     type: String,
@@ -26,7 +28,6 @@ const SubmissionSchema = new mongoose.Schema({
   startedAt: { type: Date },
   endedAt: { type: Date },
   createdAt: { type: Date, default: Date.now },
-  expireAt: { type: Date, default: () => new Date(Date.now() + 10 * 60 * 1000) }, 
 })
 
 module.exports = mongoose.model("Submission", SubmissionSchema)

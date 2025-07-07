@@ -37,7 +37,6 @@ const UserSchema = new mongoose.Schema({
   solvedEasy:   { type: Number, default: 0 },
   solvedMedium: { type: Number, default: 0 },
   solvedHard:   { type: Number, default: 0 },
-  attempting:   { type: Number, default: 0 },
 
   createdAt: { type: Date, default: Date.now }
 });

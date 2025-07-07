@@ -275,12 +275,11 @@ exports.getProblemMetaAndSampleByNumber = async (req, res) => {
     const num = parseInt(req.params.number, 10);
 
     const problem = await Problem.findOne({ problemNumber: num })
-      .select('problemNumber title statement constraints difficulty tags createdBy createdAt')
+      .select('_id problemNumber title statement constraints difficulty tags createdBy createdAt')
       .lean();
     if (!problem) {
       return res.status(404).json({ success: false, error: 'Problem not found' });
     }
-
     let sample;
     try {
       sample = await getTestCasesFromS3(String(problem._id), 'sampleTestCases.json');
@@ -295,6 +294,7 @@ exports.getProblemMetaAndSampleByNumber = async (req, res) => {
     return res.json({
       success: true,
       problem: {
+        _id : problem._id,
         problemNumber:      problem.problemNumber,
         title:       problem.title,
         statement:   problem.statement,

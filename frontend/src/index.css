@@ -108,3 +108,9 @@
 .font-mono {
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
 }
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  background-color: #0f1419; 
+}
