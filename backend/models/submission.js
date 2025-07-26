@@ -22,6 +22,7 @@ const SubmissionSchema = new mongoose.Schema({
     actualOutput: { type: String },
     errorType: { type: String }
   },
+  correctSubmissionCounted: { type: Boolean, default: false },
   errorMessage: { type: String },
   totalTimeMs: { type: Number },
   totalMemoryKb: { type: Number },

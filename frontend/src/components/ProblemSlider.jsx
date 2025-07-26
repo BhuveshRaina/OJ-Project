@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Trophy, Star, Zap } from 'lucide-react';
 
-// icon by difficulty
 const ICON_MAP = {
   Easy: Trophy,
   Medium: Star,
@@ -29,7 +28,7 @@ export default function ProblemSlider() {
     async function fetchHot() {
       try {
         const { data } = await axios.get(
-          'http://localhost:8000/api/problems/hot',
+          `${import.meta.env.VITE_BACKEND_URL}/api/problems/hot`,
           { withCredentials: true }
         );
         if (data.success) setHotProblems(data.problems);

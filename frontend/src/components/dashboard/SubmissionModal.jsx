@@ -1,4 +1,3 @@
-// SubmissionModal.jsx
 import React from 'react'
 import {
   Dialog,
@@ -9,7 +8,6 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Copy, ExternalLink } from 'lucide-react'
-
 const getBadgeClass = diff => ({
   Easy:   'bg-green-900 text-green-300 border-green-700',
   Medium: 'bg-yellow-900 text-yellow-300 border-yellow-700',
@@ -24,7 +22,6 @@ function formatMemory(kb) {
 
 export default function SubmissionModal({ submission, onClose }) {
   if (!submission) return null
-
   const copyToClipboard = () => navigator.clipboard.writeText(submission.code)
 
   return (
@@ -83,13 +80,15 @@ export default function SubmissionModal({ submission, onClose }) {
                 >
                   <Copy className="w-4 h-4 mr-1" /> Copy
                 </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="border-gray-600 text-black hover:bg-gray-700 hover:text-white"
-                >
-                  <ExternalLink className="w-4 h-4 mr-1" /> View Problem
-                </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-gray-600 text-black hover:bg-gray-700 hover:text-white"
+                onClick={() => window.location.href = `problems/${submission.problemNumber}`}
+              >
+                <ExternalLink className="w-4 h-4 mr-1" /> View Problem
+              </Button>
+                
               </div>
             </div>
 

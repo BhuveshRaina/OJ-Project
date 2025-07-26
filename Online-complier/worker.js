@@ -13,23 +13,20 @@ submissionQueue.process(async (job, done) => {
       endedAt : new Date(),
     };
 
-    /* store perf stats on AC */
     if (result.status === "Accepted") {
       update.totalTimeMs   = result.totalTimeMs;
       update.totalMemoryKb = result.totalMemoryKb;
     }
-
     if (result.error) {
       update.errorMessage = result.error;
     }
-
     if (result.failedTestcase) {
       const tc = testcases[result.failedTestcase - 1];
       update.failedTestCase = {
         input          : tc.input,
         expectedOutput : tc.expectedOutput,
         actualOutput   : result.actualOutput,
-        errorType      : result.status,       // WA, TLE, MLE, RTE
+        errorType      : result.status,
       };
     }
 

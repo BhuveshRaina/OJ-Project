@@ -3,8 +3,8 @@ import api from 'axios';
 
 export const loginUser = createAsyncThunk('authentication/loginUser', async (credentialsObject) => {
   try {
-    const { data } = await api.post('http://localhost:8000/api/auth/login', credentialsObject, { withCredentials: true });
-    return data;                              
+    const { data } = await api.post(`${import.meta.env.VITE_BACKEND_URL}/api/auth/login`, credentialsObject, { withCredentials: true });
+    return data;
   } catch (error) {
     console.error('Login API error:', error);
     throw error;
@@ -13,7 +13,7 @@ export const loginUser = createAsyncThunk('authentication/loginUser', async (cre
 
 export const registerUser = createAsyncThunk('authentication/registerUser', async (registrationPayload) => {
   try {
-    const { data } = await api.post('http://localhost:8000/api/auth/register', registrationPayload, { withCredentials: true });
+    const { data } = await api.post(`${import.meta.env.VITE_BACKEND_URL}/api/auth/register`, registrationPayload, { withCredentials: true });
     return data;
   } catch (error) {
     console.error('Register API error:', error);
@@ -24,7 +24,7 @@ export const registerUser = createAsyncThunk('authentication/registerUser', asyn
 export const getProfile = createAsyncThunk('authentication/getProfile', async () => {
   try {
     const { data } = await api.get(
-      'http://localhost:8000/api/auth/profile',          
+      `${import.meta.env.VITE_BACKEND_URL}/api/auth/profile`,
       { withCredentials: true }
     );
     return data;
@@ -36,7 +36,7 @@ export const getProfile = createAsyncThunk('authentication/getProfile', async ()
 
 export const logoutUser = createAsyncThunk('authentication/logoutUser', async () => {
   try {
-    const { data } = await api.post('http://localhost:8000/api/auth/logout', {}, { withCredentials: true });
+    const { data } = await api.post('${import.meta.env.VITE_BACKEND_URL}/api/auth/logout', {}, { withCredentials: true });
     return data;
   } catch (error) {
     console.error('Logout API error:', error);
@@ -44,7 +44,7 @@ export const logoutUser = createAsyncThunk('authentication/logoutUser', async ()
   }
 })
 export const googleLogin = createAsyncThunk('auth/google', async () => {
-  window.location.href = 'http://localhost:8000/auth/google';
+  window.location.href = `${import.meta.env.VITE_BACKEND_URL}/auth/google`;
 });
 
 const initialState = {

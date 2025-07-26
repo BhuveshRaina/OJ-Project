@@ -19,7 +19,7 @@ const ProblemStats = () => {
 
   useEffect(() => {
     axios
-      .get('http://localhost:8000/api/problems/summary', { withCredentials: true })
+      .get(`${import.meta.env.VITE_BACKEND_URL}/api/problems/summary`, { withCredentials: true })
       .then(({ data }) => data.success && setPlatform(data.stats))
       .catch(console.error);
   }, []);
@@ -27,7 +27,7 @@ const ProblemStats = () => {
   useEffect(() => {
     if (!user?._id) return;
     axios
-      .get(`http://localhost:8000/api/users/${user._id}/stats`, { withCredentials: true })
+      .get(`${import.meta.env.VITE_BACKEND_URL}/api/users/${user._id}/stats`, { withCredentials: true })
       .then(({ data }) => data.success && setUserStats(data.stats))
       .catch(console.error);
   }, [user?._id]);
@@ -54,7 +54,7 @@ const ProblemStats = () => {
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {/* overall */}
+        
         <div className="text-center">
           <div className="text-3xl font-bold text-white mb-1">{uTotal}</div>
           <div className="text-sm text-gray-300 mb-3">
@@ -69,7 +69,7 @@ const ProblemStats = () => {
           <div className="text-xs text-gray-400 mt-1">{overallPct}%</div>
         </div>
 
-        {/* breakdown */}
+        
         <StatRow
           icon={<Target className="h-4 w-4 text-green-500" />}
           label="Easy"
@@ -107,7 +107,7 @@ const StatRow = ({ icon, label, solved, total, percentage, barClass, textClass }
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
         {icon}
-        {/* label now picks up its own color */}
+        
         <span className={`${textClass} font-medium`}>{label}</span>
       </div>
       <span className="text-sm text-gray-300 font-medium">

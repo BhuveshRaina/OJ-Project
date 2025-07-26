@@ -1,9 +1,10 @@
 // src/pages/Dashboard.jsx
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useSelector } from 'react-redux'
+import axios from 'axios'
+
 import UserProfile from '@/components/dashboard/UserProfile'
 import UpcomingContests from '@/components/dashboard/UpcomingContests'
-import SolvedStats from '@/components/dashboard/SolvedStats'
 import RatingChart from '@/components/dashboard/RatingChart'
 import RecentSubmissions from '@/components/dashboard/RecentSubmissions'
 import SubmissionModal from '@/components/dashboard/SubmissionModal'
@@ -12,16 +13,27 @@ import ActivityHeatmap from '@/components/ActivityHeatMap'
 
 const Dashboard = () => {
   const [selectedSubmission, setSelectedSubmission] = useState(null)
+  const [activityData, setActivityData] = useState({})
+  const { user, isAuthenticated } = useSelector((state) => state.auth)
+  useEffect(() => {
+    const fetchActivity = async () => {
+      try {
+        const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/users/${user._id}/heatmap`)
+        if (res.data.success) {
+          setActivityData(res.data.activity)
+        }
+      } catch (err) {
+        console.error('Failed to fetch activity data:', err)
+      }
+    }
 
-  const { user , isAuthenticated } = useSelector((state) => state.auth)
-  console.log(isAuthenticated);
-  const rawActivity = user?.activity || {}  
+    if (user?._id) fetchActivity()
+  }, [user])
 
-  const heatmapData = Object.entries(rawActivity).map(([date, count]) => ({
+  const heatmapData = Object.entries(activityData).map(([date, count]) => ({
     date,
     count
   }))
-
   return (
     <div className="min-h-screen bg-dark-bg">
       <div className="container mx-auto px-4 py-8 w-full">
@@ -33,7 +45,7 @@ const Dashboard = () => {
           <div className="lg:col-span-9 space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
               <ProgressShowcase />
-              <RatingChart />
+              <RatingChart userId={user._id}/>
             </div>
 
             <ActivityHeatmap data={heatmapData} />

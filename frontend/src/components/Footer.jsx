@@ -6,7 +6,7 @@ const Footer = () => {
     <footer className="border-t border-gray-700 bg-dark-card/80 backdrop-blur-sm">
       <div className="container py-8">
         <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-          {/* Logo & Copyright */}
+         
           <div className="flex items-center space-x-4">
             <Link to="/" className="flex items-center space-x-2">
               <Code className="h-6 w-6 text-code-blue" />
@@ -19,7 +19,7 @@ const Footer = () => {
             </span>
           </div>
 
-          {/* Links */}
+          
           <div className="flex items-center space-x-6">
             <Link to="/about" className="text-gray-400 hover:text-code-blue text-sm transition-colors">
               About
@@ -32,7 +32,7 @@ const Footer = () => {
             </Link>
           </div>
 
-          {/* Social Links */}
+          
           <div className="flex items-center space-x-3">
             <a href="#" className="text-gray-400 hover:text-code-blue transition-colors">
               <Github className="h-5 w-5" />

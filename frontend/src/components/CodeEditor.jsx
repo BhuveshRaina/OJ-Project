@@ -19,12 +19,11 @@ const CodeEditor = ({
   const languages = [
     { value: "cpp",    label: "C++"     },
     { value: "python", label: "Python"  },
-    { value: "java",   label: "Java"    },
   ];
 
   return (
     <div className="h-full bg-[#0f1419] flex flex-col">
-      {/* header */}
+      
       <div className="flex items-center justify-between p-4 border-b border-[#1e2328] bg-[#0f1419]">
         <div className="flex items-center gap-3">
           <Code2 className="h-5 w-5 text-blue-400" />
@@ -32,7 +31,7 @@ const CodeEditor = ({
         </div>
 
         <div className="flex items-center gap-3">
-          {/* language select */}
+          
           <Select value={language} onValueChange={onLanguageChange}>
             <SelectTrigger className="w-28 bg-[#1e2328] border-[#2a2f36] text-gray-200 hover:bg-[#2a2f36] gap-1">
               <SelectValue />
@@ -42,7 +41,7 @@ const CodeEditor = ({
                 <SelectItem
                   key={l.value}
                   value={l.value}
-                  className="text-gray-200 focus:bg-[#2a2f36] hover:bg-[#2a2f36]"
+                  className="text-gray-200"
                 >
                   {l.label}
                 </SelectItem>
@@ -50,19 +49,19 @@ const CodeEditor = ({
             </SelectContent>
           </Select>
 
-          {/* run */}
+          
           <Button
             onClick={onRun}
             variant="outline"
             size="sm"
             disabled={running || submitting}
-            className="bg-[#1e2328] border-[#2a2f36] text-gray-200 hover:bg-[#2a2f36]"
+            className="bg-[#1e2328] border-[#2a2f36] text-gray-200 "
           >
-            <Play className="h-4 w-4 mr-2" />
+            <Play className="h-4 w-4 mr-0" />
             {running ? "Running…" : "Run"}
           </Button>
 
-          {/* submit */}
+          
           <Button
             onClick={onSubmit}
             size="sm"
@@ -75,7 +74,7 @@ const CodeEditor = ({
         </div>
       </div>
 
-      {/* monaco editor */}
+      
       <div className="flex-1 overflow-hidden">
         <Editor
           height="100%"

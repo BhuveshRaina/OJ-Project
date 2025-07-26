@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-const BASE = "http://localhost:8000/api/problems";
+const BASE = `${import.meta.env.VITE_BACKEND_URL}/api/problems`;
 
 export default function CreateProblemForm({ editingProblem, onProblemSaved }) {
   const { toast } = useToast();
@@ -268,9 +268,7 @@ export default function CreateProblemForm({ editingProblem, onProblemSaved }) {
     );
   };
 
-  /* ------------------------------------------------------------------ */
-  /* Render                                                              */
-  /* ------------------------------------------------------------------ */
+
   return (
     <Card className="bg-dark-card/95 border-gray-600 shadow-xl">
       <CardHeader>
@@ -287,9 +285,7 @@ export default function CreateProblemForm({ editingProblem, onProblemSaved }) {
 
       <CardContent>
         <Tabs value={activeStep} onValueChange={setActiveStep} className="w-full">
-          {/* ---------------------------------------------------------------- */}
-          {/* Tab headers                                                     */}
-          {/* ---------------------------------------------------------------- */}
+          
           <TabsList className="grid w-full grid-cols-5 bg-dark-card/50 border border-gray-600">
             {[
               { v: "basic",       i: <Info       className="h-4 w-4 mr-1" />, l: "Basic Info"   },
@@ -309,9 +305,7 @@ export default function CreateProblemForm({ editingProblem, onProblemSaved }) {
             ))}
           </TabsList>
 
-          {/* ---------------------------------------------------------------- */}
-          {/* Basic tab                                                       */}
-          {/* ---------------------------------------------------------------- */}
+          
           <TabsContent value="basic" className="mt-6 space-y-6">
             <div className="grid gap-6">
               <div>
@@ -391,9 +385,7 @@ export default function CreateProblemForm({ editingProblem, onProblemSaved }) {
             </div>
           </TabsContent>
 
-          {/* ---------------------------------------------------------------- */}
-          {/* Statement tab                                                   */}
-          {/* ---------------------------------------------------------------- */}
+        
           <TabsContent value="statement" className="mt-6">
             <Label className="text-white mb-2 block">Problem Statement *</Label>
             <Textarea
@@ -406,9 +398,7 @@ export default function CreateProblemForm({ editingProblem, onProblemSaved }) {
             />
           </TabsContent>
 
-          {/* ---------------------------------------------------------------- */}
-          {/* Constraints tab                                                 */}
-          {/* ---------------------------------------------------------------- */}
+       
           <TabsContent value="constraints" className="mt-6">
             <Label className="text-white mb-2 block">Constraints *</Label>
             <Textarea
@@ -421,9 +411,7 @@ export default function CreateProblemForm({ editingProblem, onProblemSaved }) {
             />
           </TabsContent>
 
-          {/* ---------------------------------------------------------------- */}
-          {/* JSON file tabs                                                  */}
-          {/* ---------------------------------------------------------------- */}
+        
           <TabsContent value="sample"	className="mt-6">
             {renderFileUpload("sample")}
           </TabsContent>
@@ -432,9 +420,7 @@ export default function CreateProblemForm({ editingProblem, onProblemSaved }) {
           </TabsContent>
         </Tabs>
 
-        {/* ---------------------------------------------------------------- */}
-        {/* Save                                                             */}
-        {/* ---------------------------------------------------------------- */}
+     
         <div className="mt-8 flex justify-end">
           <Button
             disabled={!isFormValid || isSubmitting}

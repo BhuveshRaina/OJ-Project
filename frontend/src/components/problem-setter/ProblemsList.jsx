@@ -42,12 +42,12 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-const BASE = "http://localhost:8000/api/problems";
+const BASE = `${import.meta.env.VITE_BACKEND_URL}/api/problems`;
 
 export default function ProblemsList({ onEditProblem }) {
   const { toast } = useToast();
 
-  /* ---------------- state ---------------- */
+
   const [searchTerm, setSearchTerm] = useState("");
   const [difficultyFilter, setDifficultyFilter] = useState("All Levels");
   const [currentPage, setCurrentPage] = useState(1);
@@ -57,7 +57,7 @@ export default function ProblemsList({ onEditProblem }) {
   const itemsPerPage = 5;
   const difficulties = ["All Levels", "Easy", "Medium", "Hard"];
 
-  /* ---------------- fetch ---------------- */
+  
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -82,7 +82,7 @@ export default function ProblemsList({ onEditProblem }) {
     };
   }, [toast]);
 
-  /* ---------------- helpers ---------------- */
+ 
   const difficultyColor = (d) =>
     ({
       Easy: "bg-green-500/20 text-green-400 border-green-500/30",
@@ -90,7 +90,7 @@ export default function ProblemsList({ onEditProblem }) {
       Hard: "bg-red-500/20 text-red-400 border-red-500/30",
     }[d] || "bg-gray-500/20 text-gray-400 border-gray-500/30");
 
-  /* ---------------- filtering & pagination ---------------- */
+ 
   const filteredProblems = problems.filter((p) => {
     const matchesSearch = p.title
       .toLowerCase()
@@ -107,7 +107,7 @@ export default function ProblemsList({ onEditProblem }) {
     validCurrentPage * itemsPerPage
   );
 
-  /* ---------------- actions ---------------- */
+
   const handleDeleteProblem = async (problem) => {
     const confirm = window.confirm(
       `Delete "${problem.title}"? This action cannot be undone.`
@@ -137,7 +137,7 @@ export default function ProblemsList({ onEditProblem }) {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
 
-  /* ---------------- render ---------------- */
+  
   return (
     <Card className="bg-dark-card/95 border-gray-600 shadow-xl">
       <CardHeader className="pb-3">
@@ -149,7 +149,7 @@ export default function ProblemsList({ onEditProblem }) {
       </CardHeader>
 
       <CardContent>
-        {/* search & filter */}
+      
         <div className="mb-4 space-y-4">
           <div className="relative max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -198,14 +198,14 @@ export default function ProblemsList({ onEditProblem }) {
           </div>
         </div>
 
-        {/* count */}
+ 
         <p className="text-gray-400 text-sm mb-3">
           {filteredProblems.length} problem
           {filteredProblems.length !== 1 ? "s" : ""}
           {loading && " (loading…)"}
         </p>
 
-        {/* table */}
+     
         <div className="rounded-md border border-gray-600 overflow-hidden">
           <Table>
             <TableHeader>
@@ -314,7 +314,7 @@ export default function ProblemsList({ onEditProblem }) {
           </Table>
         </div>
 
-        {/* no results */}
+   
         {!loading && paginatedProblems.length === 0 && (
           <div className="text-center py-8">
             <p className="text-gray-400">
@@ -323,7 +323,7 @@ export default function ProblemsList({ onEditProblem }) {
           </div>
         )}
 
-        {/* pagination */}
+        
         {totalPages > 1 && (
           <div className="mt-6 flex justify-center">
             <Pagination>

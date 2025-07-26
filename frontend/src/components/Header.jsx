@@ -1,7 +1,6 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { logoutUser } from '@/store/authSlice';
-
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -17,7 +16,8 @@ import {
   Users,
   FilePlus2,
   LogOut,
-  Lock
+  Lock,
+  Award
 } from 'lucide-react';
 
 const LockedItem = ({ label, Icon }) => (
@@ -49,8 +49,6 @@ const Header = () => {
   return (
     <header className="w-full border-b border-gray-700  backdrop-blur bg-dark-card/80 shadow-sm">
       <div className="container flex h-16 items-center justify-between">
-
-        {/* ───────── Logo ───────── */}
         <Link to="/" className="flex items-center space-x-2 group">
           <div className="relative">
             <Code className="h-8 w-8 text-code-blue group-hover:text-code-purple transition-colors duration-300" />
@@ -60,25 +58,12 @@ const Header = () => {
             CodeCraft
           </span>
         </Link>
-
-        {/* ───────── Centre nav ───────── */}
         <nav className="hidden md:flex items-center space-x-1">
           {isAuthenticated ? (
             isProblemSetter ? (
-              <Link to="/createProblem">
-                <Button variant="ghost" className="text-gray-300 hover:text-code-blue hover:bg-dark-card/50">
-                  <FilePlus2 className="h-4 w-4 mr-2" />
-                  Create Problem
-                </Button>
-              </Link>
+              ""
             ) : (
               <>
-                <Link to="/contests">
-                  <Button variant="ghost" className="text-gray-300 hover:text-code-blue hover:bg-dark-card/50">
-                    <Trophy className="h-4 w-4 mr-2" />
-                    Contest
-                  </Button>
-                </Link>
                 <Link to="/problems">
                   <Button variant="ghost" className="text-gray-300 hover:text-code-blue hover:bg-dark-card/50">
                     <BookOpen className="h-4 w-4 mr-2" />
@@ -91,19 +76,22 @@ const Header = () => {
                     Dashboard
                   </Button>
                 </Link>
+                <Link to="/leaderboard">
+                  <Button variant="ghost" className="text-gray-300 hover:text-code-blue hover:bg-dark-card/50">
+                  <Award className="h-4 w-4 mr-2" />
+                    Leaderboard
+                  </Button>
+                </Link>
               </>
             )
           ) : (
-            /* not authenticated – show locked items */
             <>
-              <LockedItem label="Contest"   Icon={Trophy}  />
+              <LockedItem label="Leaderboard"   Icon={Trophy}  />
               <LockedItem label="Problems"  Icon={BookOpen} />
               <LockedItem label="Dashboard" Icon={Users}    />
             </>
           )}
         </nav>
-
-        {/* ───────── Right side ───────── */}
         <div className="flex items-center space-x-3">
           {!isAuthenticated ? (
             <>

@@ -7,8 +7,6 @@ const UserSchema = new mongoose.Schema({
 
   role:          { type: String, enum: ['user','problemSetter'], default: 'user' },
   globalRank:    { type: Number, default: 0 },
-  contestRating: { type: Number, default: -1000 },
-
   codingTitle: {
     type: String,
     enum: [
@@ -38,6 +36,13 @@ const UserSchema = new mongoose.Schema({
   solvedMedium: { type: Number, default: 0 },
   solvedHard:   { type: Number, default: 0 },
 
+  submissions:         { type: Number, default: 0 },
+  correctSubmissions:  { type: Number, default: 0 },
+  monthlyRanks: {
+    type: Map,
+    of: Number,
+    default: {}
+  },
   createdAt: { type: Date, default: Date.now }
 });
 

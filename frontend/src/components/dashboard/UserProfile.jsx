@@ -34,7 +34,7 @@ const UserProfile = () => {
       <CardHeader className="text-center">
         <Avatar className="w-20 h-20 mx-auto mb-4">
           <AvatarImage src={userData.avatar} alt={userData.name} />
-          <AvatarFallback className="bg-code-blue text-white text-lg">
+          <AvatarFallback className="bg-indigo-500 text-white text-xl font-bold">
             {user.name
               .split(' ')
               .map((n) => n[0].toUpperCase())
@@ -44,7 +44,7 @@ const UserProfile = () => {
         <CardTitle className="text-xl font-bold text-white">
           {user.name}
         </CardTitle>
-        <p className="text-code-blue font-medium">{user.email}</p>
+        <p className="text-indigo-500 font-medium">{user.email}</p>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between">
@@ -64,9 +64,7 @@ const UserProfile = () => {
          
           <div className="flex items-center text-sm text-gray-300">
             <Trophy className="w-4 h-4 mr-2" />
-            {user.contestRating === -1000 ? 'No Contest yet' : 
-            <p>Contest Rating: {user.contestRating}</p>
-            }
+            No Contest Yet
           </div>
         </div>
       </CardContent>

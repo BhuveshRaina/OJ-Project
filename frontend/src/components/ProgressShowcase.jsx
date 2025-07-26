@@ -22,18 +22,14 @@ export default function ProgressShowcase() {
     hard:   0,
     total:  0,
   })
-
-  // load profile
   useEffect(() => {
     if (status === 'idle') dispatch(getProfile())
   }, [dispatch, status])
-
-  // fetch platform totals
   useEffect(() => {
     async function fetchPlatform() {
       try {
         const { data } = await axios.get(
-          'http://localhost:8000/api/problems/summary',
+          `${import.meta.env.VITE_BACKEND_URL}/api/problems/summary`,
           { withCredentials: true }
         )
         if (data.success) setPlatformStats(data.stats)
@@ -43,14 +39,12 @@ export default function ProgressShowcase() {
     }
     fetchPlatform()
   }, [])
-
-  // fetch user stats
   useEffect(() => {
     if (!user?._id) return
     async function fetchUser() {
       try {
         const { data } = await axios.get(
-          `http://localhost:8000/api/users/${user._id}/stats`,
+          `${import.meta.env.VITE_BACKEND_URL}/api/users/${user._id}/stats`,
           { withCredentials: true }
         )
         if (data.success) setUserStats(data.stats)
@@ -63,17 +57,13 @@ export default function ProgressShowcase() {
 
   if (status === 'loading' || !user) return null
 
-  // helper to compute percentage with its own denom
   const pct = (num, denom) =>
     denom > 0 ? ((num / denom) * 100).toFixed(1) : '0.0'
 
-  // destructure
   const { total: pTotal, Easy, Medium, Hard } = platformStats
   const { total: uTotal, easy: uEasy, medium: uMed, hard: uHard } = userStats
 
-  // overall uses the overall total
   const overallPct = pct(uTotal, pTotal)
-  // per-difficulty uses its own difficulty total
   const easyPct  = pct(uEasy, Easy)
   const medPct   = pct(uMed, Medium)
   const hardPct  = pct(uHard, Hard)
@@ -81,7 +71,7 @@ export default function ProgressShowcase() {
   return (
     <div className="flex justify-center w-full">
       <Card className="bg-dark-card border-gray-700 w-full pb-3 pt-2">
-        {/* overall circular */}
+    
         <div className="flex justify-center mb-6">
           <CircularProgress
             solved={uTotal}
@@ -92,9 +82,9 @@ export default function ProgressShowcase() {
           />
         </div>
 
-        {/* breakdown bars */}
+        
         <div className="mt-6 grid grid-cols-3 gap-4 text-center w-[90%] mx-auto">
-          {/* Easy */}
+          
           <div className="bg-gray-800 border border-gray-700 rounded-lg p-3">
             <div className="text-green-500 font-semibold mb-2">Easy</div>
             <div className="text-white text-lg mb-2">{uEasy}/{Easy}</div>
@@ -109,7 +99,7 @@ export default function ProgressShowcase() {
             </div>
           </div>
 
-          {/* Medium */}
+          
           <div className="bg-gray-800 border border-gray-700 rounded-lg p-3">
             <div className="text-yellow-500 font-semibold mb-2">Medium</div>
             <div className="text-white text-lg mb-2">{uMed}/{Medium}</div>
@@ -124,7 +114,7 @@ export default function ProgressShowcase() {
             </div>
           </div>
 
-          {/* Hard */}
+          
           <div className="bg-gray-800 border border-gray-700 rounded-lg p-3">
             <div className="text-red-600 font-semibold mb-2">Hard</div>
             <div className="text-white text-lg mb-2">{uHard}/{Hard}</div>

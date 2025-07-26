@@ -1,24 +1,31 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft } from "lucide-react";
 
-const ProblemDescription = ({ problem , sampleTestCases }) => {
+const ProblemDescription = ({ problem, sampleTestCases }) => {
+  const navigate = useNavigate();
   if (!problem) return null;
-    console.log(sampleTestCases);
+
   const [description, , inputDesc, , outputDesc] = problem.statement.split("\n");
   const constraints = problem.constraints.split("\n");
 
   return (
     <div className="h-full bg-[#0f1419] border-r border-[#1e2328] relative">
+      
+   
+
       <ScrollArea className="h-full">
         <div className="p-6 space-y-6">
-          {/* Title & Difficulty & Tags */}
+       
           <div className="border-b border-[#1e2328] pb-4">
             <div className="flex items-center gap-3 mb-2">
-              <span className="text-2xl font-bold text-gray-100">
+                <span className="text-2xl font-bold text-gray-100">
                 {problem.problemNumber}. {problem.title}
-              </span>
-              <Badge
+                </span>
+                <Badge
                 variant="secondary"
                 className={`${
                   problem.difficulty === "Easy"
@@ -29,7 +36,16 @@ const ProblemDescription = ({ problem , sampleTestCases }) => {
                 }`}
               >
                 {problem.difficulty}
-              </Badge>
+                </Badge>
+                <Button
+          variant="ghost"
+          size="sm"
+          className="bg-[#1e2328] border-[#2a2f36] hover:text-black"
+          onClick={() => navigate("/problems")}
+        >
+          <span className="text-sm">View Problems</span>
+
+                </Button>
             </div>
             <div className="flex gap-2 ml-7">
               {problem.tags.map((tag) => (
@@ -44,7 +60,7 @@ const ProblemDescription = ({ problem , sampleTestCases }) => {
             </div>
           </div>
 
-          {/* Description */}
+         
           <div>
             <h3 className="text-lg font-semibold mb-3 text-gray-100">
               Description
@@ -52,7 +68,7 @@ const ProblemDescription = ({ problem , sampleTestCases }) => {
             <p className="text-gray-300 leading-relaxed">{description}</p>
           </div>
 
-          {/* Input / Output */}
+          
           <div>
             <h3 className="text-lg font-semibold mb-3 text-gray-100">
               Input / Output
@@ -67,8 +83,7 @@ const ProblemDescription = ({ problem , sampleTestCases }) => {
             </div>
           </div>
 
-          {/* Sample Test Cases */}
-          {sampleTestCases && sampleTestCases.length > 0 && (
+          {sampleTestCases?.length > 0 && (
             <div>
               <h3 className="text-lg font-semibold mb-4 text-gray-100">
                 Examples
@@ -100,7 +115,6 @@ const ProblemDescription = ({ problem , sampleTestCases }) => {
             </div>
           )}
 
-          {/* Constraints */}
           <div>
             <h3 className="text-lg font-semibold mb-3 text-gray-100">
               Constraints
@@ -112,7 +126,7 @@ const ProblemDescription = ({ problem , sampleTestCases }) => {
                   className="bg-[#2a2f36] rounded-lg p-3 border border-[#3a3f46]"
                 >
                   <div className="text-gray-300 font-mono text-sm flex items-center">
-                    <span className="w-2 h-2 bg-gray-400 rounded-full mr-3 flex-shrink-0"></span>
+                    <span className="w-2 h-2 bg-gray-400 rounded-full mr-3 flex-shrink-0" />
                     {c}
                   </div>
                 </div>

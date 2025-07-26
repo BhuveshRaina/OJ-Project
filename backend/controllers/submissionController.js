@@ -2,7 +2,7 @@ const Submission = require('../models/submission');
 const  { getTestCasesFromS3 }  = require('../utils/s3Fetcher');
 const { submissionQueue } = require('../config/redisConfig');
 const Problem             = require('../models/problem'); 
-
+const User                = require('../models/users');
 exports.createSubmission = async (req, res) => {
   try {
     const { problemId, code, language } = req.body;
@@ -13,6 +13,8 @@ exports.createSubmission = async (req, res) => {
         message : 'Missing required fields: problemId, code, or language',
       });
     }
+
+
     if (!Number.isInteger(problemId)) {
       return res.status(400).json({
         success : false,
@@ -44,7 +46,10 @@ exports.createSubmission = async (req, res) => {
       verdict       : 'Pending',
       startedAt     : new Date(),
     });
-
+    await User.findByIdAndUpdate(
+      req.user.id,
+      { $inc: { submissions: 1 } }
+    );
     const testcases = await getTestCasesFromS3(problemMongoIdStr,"hiddenTestCases.json");
 
     await submissionQueue.add(
@@ -75,7 +80,7 @@ exports.createSubmission = async (req, res) => {
 exports.getSubmissionStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const submission = await Submission.findById(id).lean();
+    const submission = await Submission.findById(id);
 
     if (!submission)
       return res.status(404).json({ success: false, message: 'Submission not found' });
@@ -83,17 +88,31 @@ exports.getSubmissionStatus = async (req, res) => {
     if (submission.userId.toString() !== req.user.id.toString())
       return res.status(403).json({ success: false, message: 'Forbidden' });
 
+    if (
+      submission.verdict === 'Accepted' &&
+      !submission.correctSubmissionCounted
+    ) {
+      await User.findByIdAndUpdate(submission.userId, {
+        $inc: { correctSubmissions: 1 }
+      });
+
+      submission.correctSubmissionCounted = true;
+      await submission.save();
+    }
+
     return res.json({
       success        : true,
       verdict        : submission.verdict,         
       errorMessage   : submission.errorMessage || submission.error || '',
       failedTestCase : submission.failedTestCase || null, 
     });
+
   } catch (err) {
     console.error('[getSubmissionStatus]', err);
     return res.status(500).json({ success: false, message: 'Could not fetch submission' });
   }
 };
+
 
 exports.getRecentSubmissions = async (req, res) => {
   try {

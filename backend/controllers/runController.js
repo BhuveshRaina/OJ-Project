@@ -14,14 +14,13 @@ exports.createRun = async (req, res) => {
       language,
       testCases,
     });
-
+    // console.log("hello");
     await runQueue.add({
       runId: run._id.toString(),
       code,
       language,
       testCases,
     });
-
     return res.status(202).json({ success: true, runId: run._id });
   } catch (err) {
     console.error("createRun error:", err);

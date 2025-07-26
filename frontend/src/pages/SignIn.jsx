@@ -20,7 +20,6 @@ const SignIn = () => {
   const [formData, setFormData]         = useState({ email: '', password: '' });
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
-  /* redirect once authenticated */
   useEffect(() => {
     if (isAuthenticated) navigate('/dashboard');
   }, [isAuthenticated, navigate]);

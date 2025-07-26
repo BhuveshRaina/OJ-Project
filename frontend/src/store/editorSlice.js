@@ -2,12 +2,18 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const editorSlice = createSlice({
   name: "editor",
-  initialState: { snippets: {} },
+  initialState: {
+    snippets: {},
+  },
   reducers: {
     saveSnippet: (state, { payload }) => {
-      const { problemNumber, language, code } = payload;
-      state.snippets[problemNumber] = state.snippets[problemNumber] || {};
-      state.snippets[problemNumber][language] = {
+      const { userId, problemNumber, language, code } = payload;
+      if (!userId) return; 
+      state.snippets[userId] = state.snippets[userId] || {};
+      
+      state.snippets[userId][problemNumber] =
+        state.snippets[userId][problemNumber] || {};
+      state.snippets[userId][problemNumber][language] = {
         code,
         savedAt: Date.now(),
       };

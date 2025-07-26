@@ -11,7 +11,6 @@ import {
 const ActivityHeatmap = ({ data = [], year: initialYear = new Date().getFullYear() }) => {
   const [selectedYear, setSelectedYear] = useState(initialYear)
 
-  // build lookup map for selected year dates
   const lookup = new Map()
   data.forEach(({ date, count }) => {
     if (date.startsWith(String(selectedYear))) {
@@ -19,13 +18,11 @@ const ActivityHeatmap = ({ data = [], year: initialYear = new Date().getFullYear
     }
   })
 
-  // determine start and end of display grid
   const yearStart = new Date(selectedYear, 0, 1)
   const firstSunday = new Date(yearStart)
   firstSunday.setDate(firstSunday.getDate() - firstSunday.getDay())
   const yearEnd = new Date(selectedYear, 11, 31)
 
-  // collect days from firstSunday to cover full year weeks
   const days = []
   let cursor = new Date(firstSunday)
   while (cursor <= yearEnd || days.length % 7 !== 0) {
@@ -35,13 +32,11 @@ const ActivityHeatmap = ({ data = [], year: initialYear = new Date().getFullYear
     cursor.setDate(cursor.getDate() + 1)
   }
 
-  // group into weeks
   const weeks = []
   for (let i = 0; i < days.length; i += 7) {
     weeks.push(days.slice(i, i + 7))
   }
 
-  // intensity based on count
   const getIntensity = (c) => {
     if (!c) return 'bg-gray-800 border-gray-700'
     if (c <= 1) return 'bg-green-900 border-green-800'
@@ -55,7 +50,6 @@ const ActivityHeatmap = ({ data = [], year: initialYear = new Date().getFullYear
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
     })
 
-  // static month labels
   const monthPositions = [0, 92, 165, 240, 330, 403, 478, 570, 642, 716, 795, 867]
   const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 

@@ -21,53 +21,70 @@ import ProblemStats from '@/components/ProblemStats';
 import Footer from '@/components/Footer';
 
 const Problems = () => {
-  // pull solvedProblems (array of string IDs) from Redux
-  const { user } = useSelector(state => state.auth);
-  const solvedProblems = user?.solvedProblems?.map(id => id.toString()) || [];
-
-  const [searchTerm, setSearchTerm]             = useState('');
+  const { user } = useSelector((state) => state.auth);
+  console.log(user._id)
+  const [solvedProblems, setSolvedProblems] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState('All');
-  const [statusFilter, setStatusFilter]         = useState('All');
-  const [topicFilter, setTopicFilter]           = useState('All Topics');
-  const [currentPage, setCurrentPage]           = useState(1);
-
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [topicFilter, setTopicFilter] = useState('All Topics');
+  const [currentPage, setCurrentPage] = useState(1);
   const [problems, setProblems] = useState([]);
-  const [total, setTotal]       = useState(0);
-  const [loading, setLoading]   = useState(false);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   const userProgressLevel = 3;
-  const problemsPerPage   = userProgressLevel * 5;
+  const problemsPerPage = userProgressLevel * 5;
 
-  const topics      = ['All Topics','Array','Hash Table','String','Linked List','Math','Binary Search','Dynamic Programming','Math','Brute Force','Geometry'];
-  const difficulties = ['All','Easy','Medium','Hard'];
-  const statuses    = ['All','Solved','Unsolved'];
+  const topics = ['All Topics', 'Array', 'Hash Table', 'String', 'Linked List', 'Math', 'Binary Search', 'Dynamic Programming', 'Brute Force', 'Geometry'];
+  const difficulties = ['All', 'Easy', 'Medium', 'Hard'];
+  const statuses = ['All', 'Solved', 'Unsolved'];
 
+  // ✅ Fetch solved problem IDs once
+  useEffect(() => {
+    const fetchSolved = async () => {
+      try {
+        const { data } = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/users/${user._id}/solved-problems`, {
+          withCredentials: true,
+        });
+        if (data.success) {
+          setSolvedProblems(data.solvedProblemIds);
+        }
+      } catch (error) {
+        console.error('Error fetching solved problems:', error);
+      }
+    };
+
+    if (user?._id) fetchSolved();
+  }, [user?._id]);
+
+  // 🔄 Fetch filtered problems
   useEffect(() => {
     const fetchProblems = async () => {
       setLoading(true);
       try {
         const params = {
-          page:  currentPage,
+          page: currentPage,
           limit: problemsPerPage,
         };
-        if (difficultyFilter !== 'All')      params.difficulty = difficultyFilter;
-        if (topicFilter      !== 'All Topics') params.tags       = topicFilter;
-        if (statusFilter     !== 'All') {
-          if (statusFilter === 'Solved')   params.solved = 'true';
+        if (difficultyFilter !== 'All') params.difficulty = difficultyFilter;
+        if (topicFilter !== 'All Topics') params.tags = topicFilter;
+        if (statusFilter !== 'All') {
+          if (statusFilter === 'Solved') params.solved = 'true';
           if (statusFilter === 'Unsolved') params.solved = 'false';
         }
-        if (searchTerm.trim())               params.search = searchTerm.trim();
+        if (searchTerm.trim()) params.search = searchTerm.trim();
 
-        const { data } = await axios.get(
-          'http://localhost:8000/api/problems',
-          { params, withCredentials: true }
-        );
+        const { data } = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/problems`, {
+          params,
+          withCredentials: true,
+        });
 
         if (data.success) {
-          // inject solved flag here
-          const withSolved = data.problems.map(p => ({
+          // ✅ Add `solved: true/false` flag per problem
+          const withSolved = data.problems.map((p) => ({
             ...p,
-            solved: solvedProblems.includes(p._id.toString())
+            solved: solvedProblems.includes(p._id.toString()),
           }));
           setProblems(withSolved);
           setTotal(data.total);
@@ -80,26 +97,19 @@ const Problems = () => {
     };
 
     fetchProblems();
-  }, [
-    searchTerm,
-    difficultyFilter,
-    statusFilter,
-    topicFilter,
-    currentPage,
-    // note: solvedProblems not in deps, so we don't refetch when user solves new ones
-  ]);
+  }, [searchTerm, difficultyFilter, statusFilter, topicFilter, currentPage, solvedProblems]);
 
   const totalPages = Math.ceil(total / problemsPerPage);
 
-  const handleNextPage = () => setCurrentPage(cp => Math.min(cp + 1, totalPages));
-  const handlePrevPage = () => setCurrentPage(cp => Math.max(cp - 1, 1));
+  const handleNextPage = () => setCurrentPage((cp) => Math.min(cp + 1, totalPages));
+  const handlePrevPage = () => setCurrentPage((cp) => Math.max(cp - 1, 1));
 
   const handleFilterChange = (type, value) => {
     setCurrentPage(1);
     if (type === 'difficulty') setDifficultyFilter(value);
-    if (type === 'status')     setStatusFilter(value);
-    if (type === 'topic')      setTopicFilter(value);
-    if (type === 'search')     setSearchTerm(value);
+    if (type === 'status') setStatusFilter(value);
+    if (type === 'topic') setTopicFilter(value);
+    if (type === 'search') setSearchTerm(value);
   };
 
   return (
@@ -129,25 +139,14 @@ const Problems = () => {
       {/* Main */}
       <section className="flex-1 px-4 py-8">
         <div className="container grid lg:grid-cols-4 gap-8">
-          {/* Filters & List */}
           <div className="lg:col-span-3">
             {/* Filters */}
             <div className="mb-6 space-y-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search problems..."
-                  value={searchTerm}
-                  onChange={e => handleFilterChange('search', e.target.value)}
-                  className="pl-10 bg-dark-card/80 border-gray-600 text-white  placeholder-gray-400 focus:border-code-blue focus:ring-code-blue/20"
-                />
-              </div>
               <div className="flex flex-wrap gap-3">
                 <div className="flex gap-2">
-                  {difficulties.map(d => (
+                  {difficulties.map((d) => (
                     <Button
                       key={d}
-                      variant={difficultyFilter === d ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => handleFilterChange('difficulty', d)}
                       className={
@@ -161,10 +160,9 @@ const Problems = () => {
                   ))}
                 </div>
                 <div className="flex gap-2">
-                  {statuses.map(s => (
+                  {statuses.map((s) => (
                     <Button
                       key={s}
-                      variant={statusFilter === s ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => handleFilterChange('status', s)}
                       className={
@@ -180,7 +178,6 @@ const Problems = () => {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
-                      variant="outline"
                       size="sm"
                       className="border-gray-500 text-gray-900 bg-gray-100 hover:bg-dark-card/80 hover:text-white hover:border-code-blue/50 font-semibold min-w-[120px] justify-between"
                     >
@@ -189,7 +186,7 @@ const Problems = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56 bg-dark-card border-gray-600 shadow-xl z-50" align="start">
-                    {topics.map(t => (
+                    {topics.map((t) => (
                       <DropdownMenuItem
                         key={t}
                         onClick={() => handleFilterChange('topic', t)}
@@ -210,9 +207,9 @@ const Problems = () => {
               {loading ? 'Loading…' : `${total} problems found`} (Level {userProgressLevel}: {problemsPerPage} per page)
             </p>
 
-            {/* Problem cards */}
+            {/* Problem Cards */}
             <div className="space-y-3 mb-6">
-              {problems.map(p => (
+              {problems.map((p) => (
                 <ProblemCard key={p._id} problem={p} />
               ))}
             </div>
@@ -225,11 +222,9 @@ const Problems = () => {
                   size="sm"
                   onClick={handlePrevPage}
                   disabled={currentPage === 1}
-                  className="border-gray-500 text-gray-900 bg-gray-100 hover:bg-dark-card/80 hover:text-white hover:border-code-blue/50 disabled:opacity-50 disabled:cursor-not-allowed font-bold"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                
                 <Button
                   variant="default"
                   size="sm"
@@ -237,13 +232,11 @@ const Problems = () => {
                 >
                   {currentPage}
                 </Button>
-
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleNextPage}
                   disabled={currentPage === totalPages}
-                  className="border-gray-500 text-gray-900 bg-gray-100 hover:bg-dark-card/80 hover:text-white hover:border-code-blue/50 disabled:opacity-50 disabled:cursor-not-allowed font-bold"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -259,6 +252,8 @@ const Problems = () => {
           </div>
         </div>
       </section>
+
+      {/* Footer (optional) */}
     </div>
   );
 };

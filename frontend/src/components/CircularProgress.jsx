@@ -6,10 +6,10 @@ const CircularProgress = ({
   total,
   attempting = 0,
   size = 120,
-  strokeWidth = 10,     // as your example
+  strokeWidth = 10,     
   className
 }) => {
-  // ✨ unchanged from your code
+ 
   const radius = (size - strokeWidth - 30) / 2;
   const circumference = 2 * Math.PI * radius;
   const pct = total > 0 ? solved / total : 0;
@@ -21,17 +21,17 @@ const CircularProgress = ({
         <svg
           width={size}
           height={size}
-          className="transform -rotate-90"   // start at top
+          className="transform -rotate-90"   
           viewBox={`0 0 ${size} ${size}`}
         >
-          {/* background track */}
+          
           <circle
             cx={size/2} cy={size/2} r={radius}
             stroke="#374151" strokeWidth={strokeWidth}
             fill="none"
           />
 
-          {/* colored progress arc */}
+         
           <circle
             cx={size/2} cy={size/2} r={radius}
             stroke="url(#grad)" strokeWidth={strokeWidth}
@@ -50,9 +50,9 @@ const CircularProgress = ({
               x2="0"   y2={radius}
               gradientTransform={`translate(${size/2},${size/2}) rotate(90)`}
             >
-              <stop offset="0%"   stopColor="#dc2626" /> {/* red @ start */}
-              <stop offset="50%"  stopColor="#fbbf24" /> {/* yellow mid-way */}
-              <stop offset="100%" stopColor="#34d399" /> {/* green @ end */}
+              <stop offset="0%"   stopColor="#dc2626" /> 
+              <stop offset="50%"  stopColor="#fbbf24" /> 
+              <stop offset="100%" stopColor="#34d399" /> 
             </linearGradient>
           </defs>
         </svg>

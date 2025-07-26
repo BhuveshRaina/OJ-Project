@@ -24,7 +24,7 @@ const ProblemCard = ({ problem }) => {
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4 flex-1">
-          {/* Status Icon */}
+          
           <div className="flex items-center justify-center w-6 h-6">
             {problem.solved ? (
               <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
@@ -35,7 +35,6 @@ const ProblemCard = ({ problem }) => {
             )}
           </div>
 
-          {/* Problem Info */}
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-gray-400 font-medium">
@@ -66,7 +65,6 @@ const ProblemCard = ({ problem }) => {
           </div>
         </div>
 
-        {/* Difficulty & Acceptance */}
         <div className="flex items-center gap-4 text-sm">
           <Badge
             variant="outline"

@@ -13,7 +13,7 @@ import ProblemEditor   from '@/pages/ProblemEditor';
 import ProblemSetter   from '@/pages/ProblemSetter';
 import Dashboard       from '@/pages/Dashboard';
 import Contest         from '@/pages/Contest';
-
+import Leaderboard    from '@/pages/Leaderboard';
 export default function App() {
   const dispatch = useDispatch();
   const { status } = useSelector((state) => state.auth);
@@ -35,8 +35,9 @@ export default function App() {
           <Route path="/dashboard"   element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/contests"    element={<ProtectedRoute><Contest /></ProtectedRoute>} />
           <Route path="/createProblem" element={<ProtectedRoute><ProblemSetter /></ProtectedRoute>} />
+          <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
         </Route>
-          <Route path="/problems/:id" element={<ProtectedRoute><ProblemEditor /></ProtectedRoute>} />
+        <Route path="/problems/:id" element={<ProtectedRoute><ProblemEditor /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   );

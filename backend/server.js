@@ -1,13 +1,12 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
+require('./crons/monthlyRankCron');
 const cors = require('cors');
 const passport = require('passport');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
-
 const app = express();
-
 
 app.use(cors({
   origin: 'http://localhost:5173', 
@@ -24,8 +23,10 @@ app.use('/api/problems', require('./routes/ProblemRoute.js'));
 app.use('/api/submissions', require('./routes/submissionRoutes'));
 app.use('/api/users', require('./routes/userRouter'))
 app.use("/api",require('./routes/runRoutes'));
+app.use('/api/leaderboard', require('./routes/leaderboardRoutes'));
+app.use("/api/ai", require("./routes/aiReviewRoutes"));
 app.get('/', (req, res) => {
-  res.send('Online Judge Backend is running');
+  res.send("Welcome to the Online Judge API!");
 });
 
 const PORT = process.env.PORT || 8000;
@@ -41,3 +42,5 @@ mongoose.connect(MONGO_URI)
 .catch(err => {
   console.error('MongoDB connection error:', err);
 });
+
+
