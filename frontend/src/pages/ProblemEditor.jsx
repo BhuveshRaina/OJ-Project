@@ -132,6 +132,7 @@ export default function RunPage() {
         payload,
         { withCredentials: true }
       );
+      console.log(`${import.meta.env.VITE_BACKEND_URL}/api/run`);
       setRunId(data.runId);
     } catch (err) {
       console.error(err);

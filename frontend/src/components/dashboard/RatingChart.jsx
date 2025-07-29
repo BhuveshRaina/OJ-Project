@@ -32,7 +32,7 @@ const RatingChart = ({ userId }) => {
     const load = async () => {
       try {
         const hist = await axios.get(
-          `http://backend:8000/api/users/${userId}/monthly-ranks`
+          `${import.meta.env.VITE_BACKEND_URL}/api/users/${userId}/monthly-ranks`
         );
         if (hist.data.success) {
           setHistory(
@@ -46,7 +46,7 @@ const RatingChart = ({ userId }) => {
         }
 
         const now = await axios.get(
-          `http://backend:8000/api/users/${userId}/current-rank`
+          `${import.meta.env.VITE_BACKEND_URL}/api/users/${userId}/current-rank`
         );
         if (now.data.success) {
           setCurrentRank(now.data.rank);

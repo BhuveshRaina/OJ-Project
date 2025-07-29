@@ -18,7 +18,10 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchActivity = async () => {
       try {
-        const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/users/${user._id}/heatmap`)
+        const res = await axios.get(
+      `${import.meta.env.VITE_BACKEND_URL}/api/users/${user._id}/heatmap`,
+  { withCredentials: true }
+);
         if (res.data.success) {
           setActivityData(res.data.activity)
         }

@@ -39,7 +39,7 @@ export default function RecentSubmissions({ onSubmissionClick }) {
 
   useEffect(() => {
     axios
-      .get(`http://backend:8000/api/submissions/recent?page=${page}&limit=${perPage}`, { withCredentials: true })
+      .get(`${import.meta.env.VITE_BACKEND_URL}/api/submissions/recent?page=${page}&limit=${perPage}`, { withCredentials: true })
       .then(({ data }) => {
         if (data.success) {
           setSubs(data.submissions)
